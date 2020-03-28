@@ -1,0 +1,154 @@
+.editor-wrapper{
+    display:flex;
+    flex-flow:row nowrap;
+
+
+}
+
+.table {
+    display: inline-table;
+    table-layout:fixed;
+    z-index:-5;
+    margin-bottom:0% !important;
+}
+
+.bg-dark{
+    background-color:#0D0D0D !important;
+}
+
+.table-bordered, .table-bordered td, .table-bordered th{
+    border:1px solid #373737 !important;
+}
+.grid{
+    display:grid;
+    width:100%;
+    position: absolute;
+    grid-template-columns: 12.5% 12.5% 12.5% 12.5% 12.5% 12.5% 12.5% 12.5%;
+    grid-template-rows: 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2% 2%;
+    height:100%;
+}
+
+.syncSpace{
+    position: fixed;
+    top:0;
+    bottom:0;
+    left:0;
+    right:0;
+    box-shadow: 0 0 200px rgba(0,0,0,0.9) inset;
+    display: flex;
+}
+
+.tile{
+    font-size:.7em;
+    font-weight: 700;
+    padding:.1em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap; 
+    cursor: pointer;
+    border: 2px solid #0003;
+    transition: .1s ease-in-out;
+}
+
+.tile.tile-color-1{
+    background-color:#87D962;
+}
+.tile.tile-color-2{
+    background-color:#F2D544;
+}
+.tile.tile-color-3{
+    background-color:rgb(217, 151, 89);
+}
+.tile.tile-color-4{
+    background-color:#D96459;
+}
+.tile.tile-color-5{
+    background-color:rgb(217, 98, 197);
+}
+
+
+.tile:hover{
+    border: 2px solid #D9D6D2;
+}
+
+.tile-color-selected{
+    background-color: #17a2b8;
+    color:#D9D6D2;
+}
+/*.tile:hover{
+}*/
+
+
+.side{
+    padding-top:0em !important;
+    padding-bottom:.75em !important;
+}
+
+tr, th, td *{
+    min-height:50px !important;
+    height: 50px !important;
+    max-height:50px !important;
+}
+td, th{
+    width:12.5%;
+    color: #D9D6D2;
+}
+
+.editor-wrapper > .time-table{
+    flex:2;
+    position: relative;
+    width:66% !important;
+    background-color:#424242;
+}
+
+.editor-wrapper > .config-panel{
+    flex:1;
+    width:33% !important;
+    border-left: 3px solid #F2D544;
+    background-color: #252625;
+}
+
+.editor-wrapper > .config-panel > .config-panel-inner{
+    padding:.84rem;
+    position:fixed;
+    width:33%;
+}
+
+.config-panel-inner > .form{
+    display:block;
+    padding:1em;
+    background-color: #373737;
+    width:100%;
+    border-radius: .2em;
+    color:white;
+}
+
+form > .form-group.rightside{
+    text-align:right;
+}
+
+.logo{
+    height:1.5rem;
+    vertical-align: center;
+    margin-top:.15rem;
+}
+
+.form-control{
+    background-color: #D9D6D2;
+}
+
+.circle{
+    width:12px;
+    height:12px;
+    border-radius: 10em;
+    border: 2px solid #D9D6D2;
+    display: inline-block;
+}
+
+.running{
+    background-color: #87D962;
+}
+
+.stopped{
+    background-color: #D96459;
+}
