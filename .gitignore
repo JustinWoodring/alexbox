@@ -1,0 +1,8 @@
+Cargo.lock
+/target/*
+static_files
+src/clientapp/node_modules
+src/clientapp/package-lock.json
+src/clientapp/build
+code.code-workspace
+.git
