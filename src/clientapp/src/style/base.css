@@ -5,6 +5,12 @@
 
 }
 
+.planner-navbar{
+    position:sticky;
+    top:0px;
+    z-index: 100;
+}
+
 .table {
     display: inline-table;
     table-layout:fixed;
@@ -14,6 +20,28 @@
 
 .bg-dark{
     background-color:#0D0D0D !important;
+}
+
+.nav-tabs .nav-item.show .nav-link, .nav-tabs .nav-link.active{
+    color:#FFFFFF !important;
+    background-color:rgba(0,0,0,0.0) !important;
+    border-color: rgba(0,0,0,0.2) rgba(0,0,0,0.2) #373737 !important;
+}
+
+.nav-tabs .nav-link:focus, .nav-tabs .nav-link:hover{
+    color:#FFFFFF !important;
+    background-color:rgba(0,0,0,0.1);
+    border-color:rgba(0,0,0,0.2) rgba(0,0,0,0.2) rgba(0,0,0,0.0);
+}
+
+.nav-tabs .nav-link, .nav-tabs .nav-link{
+    color:#D9D6D2;
+    background-color:rgba(0,0,0,0.1);
+    border-color: rgba(0,0,0,0.2) rgba(0,0,0,0.2) rgba(0,0,0,0.0);
+}
+
+.nav-tabs{
+    border-bottom: 1px solid rgba(0,0,0,0.2);
 }
 
 .table-bordered, .table-bordered td, .table-bordered th{
@@ -90,8 +118,12 @@ tr, th, td *{
     max-height:50px !important;
 }
 td, th{
+    max-width:12.5%;
     width:12.5%;
     color: #D9D6D2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .editor-wrapper > .time-table{
@@ -151,4 +183,11 @@ form > .form-group.rightside{
 
 .stopped{
     background-color: #D96459;
+}
+
+@media only screen and (max-width: 500px) {
+    .editor-wrapper{flex-flow:row wrap;}
+    .time-table{min-width:100% !important;}
+    .config-panel{min-width: 162px !important; position: sticky; max-height: 50vh; overflow-y: scroll; left:0px; bottom:0px; right:0px; border-left: 0px solid #F2D544 !important; border-top: 3px solid #F2D544; box-shadow: 0px 20px 5px 20px black;}  
+    .config-panel-inner{position: static !important; width:100% !important;}  
 }

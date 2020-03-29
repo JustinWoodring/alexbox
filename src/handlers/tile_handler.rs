@@ -28,6 +28,9 @@ pub async fn get_tile() -> Result<impl warp::Reply, warp::Rejection> {
                 id: tile.id,
                 title: tile.title,
                 mpv: tile.mpv,
+                prempv: tile.prempv,
+                postmpv: tile.postmpv,
+                loopmpv: tile.loopmpv,
                 day: tile.day,
                 time: my_time.to_float(),
                 duration: tile.duration,
@@ -65,6 +68,34 @@ pub async fn post_tile(input : Vec<HashMap<String, String>>) -> Result<impl warp
         if let Some(value) = tile.get("mpv"){
             new_mpv = value;
             if new_mpv.len() > 1000{
+                ok=false;
+            }
+        }else{ok=false;}
+
+        //new pre mpv
+        let mut new_prempv = "";
+        if let Some(value) = tile.get("prempv"){
+            new_prempv = value;
+            if new_prempv.len() > 1000{
+                ok=false;
+            }
+        }else{ok=false;}
+
+        //new post mpv
+        let mut new_postmpv = "";
+        if let Some(value) = tile.get("postmpv"){
+            new_postmpv = value;
+            if new_postmpv.len() > 1000{
+                ok=false;
+            }
+        }else{ok=false;}
+
+
+        //new loop mpv
+        let mut new_loopmpv = "";
+        if let Some(value) = tile.get("loopmpv"){
+            new_loopmpv = value;
+            if new_loopmpv.len() > 10 || (new_loopmpv != "yes" && new_loopmpv != "no"){
                 ok=false;
             }
         }else{ok=false;}
@@ -122,6 +153,9 @@ pub async fn post_tile(input : Vec<HashMap<String, String>>) -> Result<impl warp
             let new = PostTileDTO {
                 title : new_title.to_string(),
                 mpv: new_mpv.to_string(),
+                prempv: new_prempv.to_string(),
+                postmpv: new_postmpv.to_string(),
+                loopmpv: new_loopmpv.to_string(),
                 day: new_day,
                 time: new_time.to_string(),
                 duration: new_duration,
@@ -223,7 +257,35 @@ pub async fn put_tile(input : Vec<HashMap<String, String>>) -> Result<impl warp:
             if new_mpv.len() > 1000{
                 return Ok(warp::reply::with_status(warp::reply::json(&String::from("MPV command was too long or short")), warp::http::StatusCode::BAD_REQUEST));
             }
-        }else{return Ok(warp::reply::with_status(warp::reply::json(&String::from("MPV command could not be ound")), warp::http::StatusCode::BAD_REQUEST));}
+        }else{return Ok(warp::reply::with_status(warp::reply::json(&String::from("MPV command could not be found")), warp::http::StatusCode::BAD_REQUEST));}
+        
+        //new pre mpv
+        let mut new_prempv = "";
+        if let Some(value) = tile.get("prempv"){
+            new_prempv = value;
+            if new_prempv.len() > 1000{
+                return Ok(warp::reply::with_status(warp::reply::json(&String::from("Pre MPV command was too long or short")), warp::http::StatusCode::BAD_REQUEST));
+            }
+        }else{return Ok(warp::reply::with_status(warp::reply::json(&String::from("Pre MPV command could not be found")), warp::http::StatusCode::BAD_REQUEST));}
+
+        //new post mpv
+        let mut new_postmpv = "";
+        if let Some(value) = tile.get("postmpv"){
+            new_postmpv = value;
+            if new_postmpv.len() > 1000{
+                return Ok(warp::reply::with_status(warp::reply::json(&String::from("Post MPV command was too long or short")), warp::http::StatusCode::BAD_REQUEST));
+            }
+        }else{return Ok(warp::reply::with_status(warp::reply::json(&String::from("Post MPV command could not be found")), warp::http::StatusCode::BAD_REQUEST));}
+
+
+        //new loop mpv
+        let mut new_loopmpv = "";
+        if let Some(value) = tile.get("loopmpv"){
+            new_loopmpv = value;
+            if new_loopmpv.len() > 10 || (new_loopmpv != "yes" && new_loopmpv != "no"){
+                return Ok(warp::reply::with_status(warp::reply::json(&String::from("Loop MPV command was too long or short and possible not Yes or No")), warp::http::StatusCode::BAD_REQUEST));
+            }
+        }else{return Ok(warp::reply::with_status(warp::reply::json(&String::from("Loop MPV command could not be found")), warp::http::StatusCode::BAD_REQUEST));}
 
         //new day
         let mut new_day = -1;
@@ -288,6 +350,9 @@ pub async fn put_tile(input : Vec<HashMap<String, String>>) -> Result<impl warp:
             id: tile_id,
             title : new_title.to_string(),
             mpv: new_mpv.to_string(),
+            prempv: new_prempv.to_string(),
+            postmpv: new_postmpv.to_string(),
+            loopmpv: new_loopmpv.to_string(),
             day: new_day,
             time: new_time.to_string(),
             duration: new_duration,
@@ -298,6 +363,9 @@ pub async fn put_tile(input : Vec<HashMap<String, String>>) -> Result<impl warp:
             id: tile_id,
             title : new_title.to_string(),
             mpv: new_mpv.to_string(),
+            prempv: new_prempv.to_string(),
+            postmpv: new_postmpv.to_string(),
+            loopmpv: new_loopmpv.to_string(),
             day: new_day,
             time: new_time.to_string(),
             duration: new_duration,
@@ -308,6 +376,9 @@ pub async fn put_tile(input : Vec<HashMap<String, String>>) -> Result<impl warp:
             id: tile_id,
             title : new_title.to_string(),
             mpv: new_mpv.to_string(),
+            prempv: new_prempv.to_string(),
+            postmpv: new_postmpv.to_string(),
+            loopmpv: new_loopmpv.to_string(),
             day: new_day,
             time: new_time.to_string(),
             duration: new_duration,

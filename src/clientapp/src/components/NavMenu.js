@@ -32,17 +32,14 @@ class NavMenu extends React.Component {
         }
 
         return (
-            <Navbar color="dark" dark expand="md">
+            <Navbar className="planner-navbar" color="dark" dark expand="md">
                 <NavbarBrand><img className="logo" src="logo.png"/>AlexBox</NavbarBrand>
-                <NavbarToggler onClick={this.toggle}/>
-                <Collapse isOpen={true} navbar>
                 <Nav className="ml-auto" navbar>
                     <NavItem>
                         {button}&ensp;
                         <Button onClick={this.toggleRunCallback} color="secondary" disabled>Doesn't Work {/*running1*/ /*<span className={"circle "+running2}></span>*/}</Button>
                     </NavItem>
                 </Nav>
-                </Collapse>
             </Navbar>
         );
     }

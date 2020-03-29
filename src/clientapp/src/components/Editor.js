@@ -1,5 +1,7 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {Table, Form, Input, Label, InputGroup, FormGroup, Button, UncontrolledTooltip, Spinner} from 'reactstrap';
+import { TabContent, TabPane, Nav, NavItem, NavLink, Card, CardTitle, CardText, Row, Col } from 'reactstrap';
+import classnames from 'classnames';
 import axios from 'axios';
 
 
@@ -17,6 +19,9 @@ class Editor extends React.Component {
         this.squareClick = this.squareClick.bind(this);
         this.handleTitle = this.handleTitle.bind(this);
         this.handleMPV = this.handleMPV.bind(this);
+        this.handlePreMPV = this.handlePreMPV.bind(this);
+        this.handlePostMPV = this.handlePostMPV.bind(this);
+        this.handleLoopMPV = this.handleLoopMPV.bind(this);
         this.handleDuration = this.handleDuration.bind(this);
         this.handleColor = this.handleColor.bind(this);
         this.handleDelete = this.handleDelete.bind(this);
@@ -72,6 +77,9 @@ class Editor extends React.Component {
             item.id = -1
             item.title = "No Title"
             item.mpv = "MPV Command"
+            item.prempv = "Pre Roll MPV Command"
+            item.postmpv = "Post Roll MPV Command"
+            item.loopmpv = "no"
             item.modified = true;
             item.day = Math.floor(x/((rect.right-rect.left)/8))-1
             item.time = Math.floor(y/((rect.bottom-rect.top)/50))/2-1
@@ -105,6 +113,9 @@ class Editor extends React.Component {
                     object.id = gridItems[i].id.toString();
                     object.title = gridItems[i].title.toString();
                     object.mpv = gridItems[i].mpv.toString();
+                    object.prempv = gridItems[i].prempv.toString();
+                    object.postmpv = gridItems[i].postmpv.toString();
+                    object.loopmpv = gridItems[i].loopmpv.toString();
                     object.day = gridItems[i].day.toString();
                     if(gridItems[i].time*2 % 2==1){
                         if(gridItems[i].time<10){
@@ -126,6 +137,9 @@ class Editor extends React.Component {
                     var object = new Object();
                     object.title = gridItems[i].title.toString();
                     object.mpv = gridItems[i].mpv.toString();
+                    object.prempv = gridItems[i].prempv.toString();
+                    object.postmpv = gridItems[i].postmpv.toString();
+                    object.loopmpv = gridItems[i].loopmpv.toString();
                     object.day = gridItems[i].day.toString();
                     if(gridItems[i].time*2 % 2==1){
                         if(gridItems[i].time<10){
@@ -209,6 +223,31 @@ class Editor extends React.Component {
         gridItems[index].modified = true;
         this.setState({gridItems: gridItems});
     }
+
+    handlePreMPV(e, index){
+        e.preventDefault();
+        var gridItems = this.state.gridItems;
+        gridItems[index].prempv = e.target.value;
+        gridItems[index].modified = true;
+        this.setState({gridItems: gridItems});
+    }
+
+    handlePostMPV(e, index){
+        e.preventDefault();
+        var gridItems = this.state.gridItems;
+        gridItems[index].postmpv = e.target.value;
+        gridItems[index].modified = true;
+        this.setState({gridItems: gridItems});
+    }
+
+    handleLoopMPV(e, index){
+        e.preventDefault();
+        var gridItems = this.state.gridItems;
+        gridItems[index].loopmpv = e.target.value;
+        gridItems[index].modified = true;
+        this.setState({gridItems: gridItems});
+    }
+
 
     handleDuration(e, index){
         e.preventDefault();
@@ -322,7 +361,7 @@ class Editor extends React.Component {
                         })}
                     </Table>
                 </div>
-                <Config handleDelete={this.handleDelete} handleTitle={this.handleTitle} handleDuration={this.handleDuration} handleColor={this.handleColor} handleMPV={this.handleMPV} selectedTile={this.state.selectedTile} gridItems={this.state.gridItems} className="config-panel"/>
+                <Config handleDelete={this.handleDelete} handleTitle={this.handleTitle} handleDuration={this.handleDuration} handleColor={this.handleColor} handleMPV={this.handleMPV} handlePreMPV={this.handlePreMPV} handlePostMPV={this.handlePostMPV} handleLoopMPV={this.handleLoopMPV} selectedTile={this.state.selectedTile} gridItems={this.state.gridItems} className="config-panel"/>
             </div>
         ) : (<div class="syncSpace"><Spinner style={{margin: "auto", width: '3rem', height: '3rem'}} color="info"/></div>) ;
     }
@@ -333,11 +372,28 @@ class Config extends React.Component {
         super(props);
         this.handleTitle = this.props.handleTitle;
         this.handleMPV = this.props.handleMPV;
+        this.handlePreMPV = this.props.handlePreMPV;
+        this.handlePostMPV = this.props.handlePostMPV;
+        this.handleLoopMPV = this.props.handleLoopMPV;
         this.handleDuration = this.props.handleDuration;
         this.handleColor = this.props.handleColor;
         this.handleDelete = this.props.handleDelete;
+    
+        this.state = {
+            activeTab:'1',
+        }
+        this.setActiveTab = this.setActiveTab.bind(this);
     }
     
+    onComponentDidMount(){
+        this.setActiveTab('1');
+    }
+
+
+    setActiveTab(e){
+        if(this.state.activeTab !== e) this.setState({activeTab:e});
+    }
+
     render(){
         if(this.props.selectedTile != null){
             var tile = this.props.gridItems[this.props.selectedTile];
@@ -376,36 +432,71 @@ class Config extends React.Component {
         return (this.props.selectedTile != null) ? (
             <div className="config-panel">
             <div className="config-panel-inner">
-                <div className="form">
-        <h3>{tile.title}<br/><span style={{fontSize:".8rem"}}> from {time}</span></h3>
-                <hr/>
-                <Form>
-                    <FormGroup>
-                        <Label htmlFor="Title">Title</Label>
-                        <Input placeholder="Title" id="Title" maxlength="50"  onChange={(e) => this.handleTitle(e, this.props.selectedTile)} value={this.props.gridItems[this.props.selectedTile].title} type="text"/>
-                    </FormGroup>
-                    <FormGroup>
-                        <Label htmlFor="MPV">MPV Command</Label>
-                        <Input placeholder="MPV Command" id="MPV" maxlength="1000" onChange={(e) => this.handleMPV(e, this.props.selectedTile)} value={this.props.gridItems[this.props.selectedTile].mpv} type="textarea"/>
-                    </FormGroup>
-                    <FormGroup>
-                        <Label htmlFor="Duration">Duration (Hrs)</Label>
-                        <Input placeholder="0.5" id="Duration" step="0.5" onChange={(e) => this.handleDuration(e, this.props.selectedTile)} value={this.props.gridItems[this.props.selectedTile].duration} type="number"/>
-                    </FormGroup>
-                    <FormGroup>
-                        <Label htmlFor="Color">Color</Label>
-                        <Input id="Color" onChange={(e) => this.handleColor(e, this.props.selectedTile)} value={this.props.gridItems[this.props.selectedTile].color} type="select">
-                            <option value="1">Green</option>
-                            <option value="2">Yellow</option>
-                            <option value="3">Orange</option>
-                            <option value="4">Red</option>
-                            <option value="5">Pink</option>
-                        </Input>
-                    </FormGroup>
-                    <FormGroup className="rightside">
-                        <Button color="danger" onClick={(e) => this.handleDelete(e, this.props.selectedTile)}>Delete</Button>
-                    </FormGroup>
-                </Form>
+                <div className="form">   
+                    <h3>{tile.title}<br/><span style={{fontSize:".8rem"}}> from {time}</span></h3>
+                    <Nav tabs>
+                        <NavItem>
+                            <NavLink className={classnames({ active: this.state.activeTab == '1' })} onClick={() => { this.setActiveTab('1'); }}>
+                                Tile
+                            </NavLink>
+                        </NavItem>
+                        <NavItem>
+                            <NavLink className={classnames({ active: this.state.activeTab == '2' })} onClick={() => { this.setActiveTab('2'); }}>
+                                Video
+                            </NavLink>
+                        </NavItem>
+                    </Nav>
+                    <br/>
+                    <TabContent activeTab={this.state.activeTab}>
+                        <TabPane tabId="1">
+                            <Form>
+                                <FormGroup>
+                                    <Label htmlFor="Title">Title</Label>
+                                    <Input placeholder="Title" id="Title" maxlength="50"  onChange={(e) => this.handleTitle(e, this.props.selectedTile)} value={this.props.gridItems[this.props.selectedTile].title} type="text"/>
+                                </FormGroup>
+                                <FormGroup>
+                                    <Label htmlFor="Duration">Duration (Hrs)</Label>
+                                    <Input placeholder="0.5" id="Duration" step="0.5" onChange={(e) => this.handleDuration(e, this.props.selectedTile)} value={this.props.gridItems[this.props.selectedTile].duration} type="number"/>
+                                </FormGroup>
+                                <FormGroup>
+                                    <Label htmlFor="Color">Color</Label>
+                                    <Input id="Color" onChange={(e) => this.handleColor(e, this.props.selectedTile)} value={this.props.gridItems[this.props.selectedTile].color} type="select">
+                                        <option value="1">Green</option>
+                                        <option value="2">Yellow</option>
+                                        <option value="3">Orange</option>
+                                        <option value="4">Red</option>
+                                        <option value="5">Pink</option>
+                                    </Input>
+                                </FormGroup>
+                                <FormGroup className="rightside">
+                                    <Button color="danger" onClick={(e) => this.handleDelete(e, this.props.selectedTile)}>Delete</Button>
+                                </FormGroup>
+                            </Form>
+                        </TabPane>
+                        <TabPane tabId="2">
+                            <Form>
+                                <FormGroup>
+                                    <Label htmlFor="MPV">MPV Command</Label>
+                                    <Input placeholder="MPV Command" id="MPV" maxlength="1000" onChange={(e) => this.handleMPV(e, this.props.selectedTile)} value={this.props.gridItems[this.props.selectedTile].mpv} type="textarea"/>
+                                </FormGroup>
+                                <FormGroup>
+                                    <Label htmlFor="preMPV">Pre Roll Command</Label>
+                                    <Input placeholder="Pre Roll MPV Command" id="preMPV" maxlength="1000" onChange={(e) => this.handlePreMPV(e, this.props.selectedTile)} value={this.props.gridItems[this.props.selectedTile].prempv} type="textarea"/>
+                                </FormGroup>
+                                <FormGroup>
+                                    <Label htmlFor="postMPV">Post Roll MPV Command</Label>
+                                    <Input placeholder="Post Roll MPV Command" id="postMPV" maxlength="1000" onChange={(e) => this.handlePostMPV(e, this.props.selectedTile)} value={this.props.gridItems[this.props.selectedTile].postmpv} type="textarea"/>
+                                </FormGroup>
+                                <FormGroup>
+                                    <Label htmlFor="loop">Loop</Label>
+                                    <Input id="Loop" onChange={(e) => this.handleLoopMPV(e, this.props.selectedTile)} value={this.props.gridItems[this.props.selectedTile].loopmpv} type="select">
+                                        <option value="no">No</option>
+                                        <option value="yes">Yes</option>
+                                    </Input>
+                                </FormGroup>
+                            </Form>
+                        </TabPane>
+                    </TabContent>
                 </div>
             </div>
         </div>

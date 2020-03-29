@@ -1,0 +1,11 @@
+{
+	"application_name": "AlexBox",
+	//Max of five colors. First is default.
+	"tile-colors": {
+		"Green" : ""
+		"Yellow" : ""
+		"Orange" : ""
+		"Red" : ""
+		"Pink" : ""
+	}
+}
