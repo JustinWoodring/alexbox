@@ -22,6 +22,13 @@
     background-color:#0D0D0D !important;
 }
 
+.input-group-button{
+    cursor: pointer;
+    background-color: #babdc0;
+    border: 1 px solid #babdc0;
+    border-left: 1px solid #8b8b8b;
+}
+
 .nav-tabs .nav-item.show .nav-link, .nav-tabs .nav-link.active{
     color:#FFFFFF !important;
     background-color:rgba(0,0,0,0.0) !important;

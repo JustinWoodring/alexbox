@@ -6,3 +6,4 @@ src/clientapp/package-lock.json
 src/clientapp/build
 code.code-workspace
 .git
+planner.db

@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {Table, Form, Input, Label, InputGroup, FormGroup, Button, UncontrolledTooltip, Spinner} from 'reactstrap';
-import { TabContent, TabPane, Nav, NavItem, NavLink, Card, CardTitle, CardText, Row, Col } from 'reactstrap';
+import { TabContent, TabPane, Nav, NavItem, NavLink, Card, CardTitle, CardText, Row, Col, InputGroupAddon, InputGroupText } from 'reactstrap';
 import classnames from 'classnames';
 import axios from 'axios';
 
@@ -23,6 +23,8 @@ class Editor extends React.Component {
         this.handlePostMPV = this.handlePostMPV.bind(this);
         this.handleLoopMPV = this.handleLoopMPV.bind(this);
         this.handleDuration = this.handleDuration.bind(this);
+        this.handleDurationPositive = this.handleDurationPositive.bind(this);
+        this.handleDurationNegative = this.handleDurationNegative.bind(this);
         this.handleColor = this.handleColor.bind(this);
         this.handleDelete = this.handleDelete.bind(this);
         this.toggleModifiedCallbackTrue = this.props.toggleModifiedCallbackTrue;
@@ -273,6 +275,54 @@ class Editor extends React.Component {
         }
     }
 
+    handleDurationPositive(e, index){
+        e.preventDefault();
+        var gridItems = this.state.gridItems;
+        var new_duration = parseFloat(gridItems[index].duration)+.5;
+
+        if(new_duration % .5 == 0 && new_duration >= .5 && (gridItems[index].time + new_duration) <= 24){
+            var ok = true;
+            for(var i = 0;i<gridItems.length;i++){
+                if(i!=index){
+                    var tile = gridItems[index];
+                    var other_tile = gridItems[i];
+                    if(other_tile.time > tile.time && other_tile.time < (tile.time + new_duration) && other_tile.day == tile.day){
+                        ok = false;
+                    }
+                }
+            }
+            if(ok){
+                gridItems[index].duration = new_duration;
+                gridItems[index].modified = true;
+                this.setState({gridItems: gridItems});
+            }
+        }
+    }
+
+    handleDurationNegative(e, index){
+        e.preventDefault();
+        var gridItems = this.state.gridItems;
+        var new_duration = parseFloat(gridItems[index].duration)-.5;
+
+        if(new_duration % .5 == 0 && new_duration >= .5 && (gridItems[index].time + new_duration) <= 24){
+            var ok = true;
+            for(var i = 0;i<gridItems.length;i++){
+                if(i!=index){
+                    var tile = gridItems[index];
+                    var other_tile = gridItems[i];
+                    if(other_tile.time > tile.time && other_tile.time < (tile.time + new_duration) && other_tile.day == tile.day){
+                        ok = false;
+                    }
+                }
+            }
+            if(ok){
+                gridItems[index].duration = new_duration;
+                gridItems[index].modified = true;
+                this.setState({gridItems: gridItems});
+            }
+        }
+    }
+
     handleColor(e, index){
         e.preventDefault();
         if(e.target.value > 0 && e.target.value < 6){
@@ -361,7 +411,7 @@ class Editor extends React.Component {
                         })}
                     </Table>
                 </div>
-                <Config handleDelete={this.handleDelete} handleTitle={this.handleTitle} handleDuration={this.handleDuration} handleColor={this.handleColor} handleMPV={this.handleMPV} handlePreMPV={this.handlePreMPV} handlePostMPV={this.handlePostMPV} handleLoopMPV={this.handleLoopMPV} selectedTile={this.state.selectedTile} gridItems={this.state.gridItems} className="config-panel"/>
+                <Config handleDelete={this.handleDelete} handleTitle={this.handleTitle} handleDuration={this.handleDuration} handleDurationPositive={this.handleDurationPositive} handleDurationNegative={this.handleDurationNegative} handleColor={this.handleColor} handleMPV={this.handleMPV} handlePreMPV={this.handlePreMPV} handlePostMPV={this.handlePostMPV} handleLoopMPV={this.handleLoopMPV} selectedTile={this.state.selectedTile} gridItems={this.state.gridItems} className="config-panel"/>
             </div>
         ) : (<div class="syncSpace"><Spinner style={{margin: "auto", width: '3rem', height: '3rem'}} color="info"/></div>) ;
     }
@@ -376,6 +426,8 @@ class Config extends React.Component {
         this.handlePostMPV = this.props.handlePostMPV;
         this.handleLoopMPV = this.props.handleLoopMPV;
         this.handleDuration = this.props.handleDuration;
+        this.handleDurationPositive = this.props.handleDurationPositive;
+        this.handleDurationNegative = this.props.handleDurationNegative;
         this.handleColor = this.props.handleColor;
         this.handleDelete = this.props.handleDelete;
     
@@ -456,7 +508,13 @@ class Config extends React.Component {
                                 </FormGroup>
                                 <FormGroup>
                                     <Label htmlFor="Duration">Duration (Hrs)</Label>
-                                    <Input placeholder="0.5" id="Duration" step="0.5" onChange={(e) => this.handleDuration(e, this.props.selectedTile)} value={this.props.gridItems[this.props.selectedTile].duration} type="number"/>
+                                    <InputGroup>
+                                        <Input placeholder="0.5" id="Duration" disabled step="0.5" onChange={(e) => this.handleDuration(e, this.props.selectedTile)} value={this.props.gridItems[this.props.selectedTile].duration} type="number"/>
+                                        <InputGroupAddon addonType="append">
+                                            <InputGroupText className="input-group-button" onClick={(e) => this.handleDurationPositive(e, this.props.selectedTile)}>+</InputGroupText>
+                                            <InputGroupText className="input-group-button" onClick={(e) => this.handleDurationNegative(e, this.props.selectedTile)}>-</InputGroupText>
+                                        </InputGroupAddon>
+                                    </InputGroup>
                                 </FormGroup>
                                 <FormGroup>
                                     <Label htmlFor="Color">Color</Label>
