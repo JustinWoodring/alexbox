@@ -262,8 +262,10 @@ class Editor extends React.Component {
                 if(i!=index){
                     var tile = gridItems[index];
                     var other_tile = gridItems[i];
-                    if(other_tile.time > tile.time && other_tile.time < (tile.time + new_duration) && other_tile.day == tile.day){
-                        ok = false;
+                    if(other_tile.deleted != true){
+                        if(other_tile.time > tile.time && other_tile.time < (tile.time + new_duration) && other_tile.day == tile.day){
+                            ok = false;
+                        }
                     }
                 }
             }
@@ -286,8 +288,10 @@ class Editor extends React.Component {
                 if(i!=index){
                     var tile = gridItems[index];
                     var other_tile = gridItems[i];
-                    if(other_tile.time > tile.time && other_tile.time < (tile.time + new_duration) && other_tile.day == tile.day){
-                        ok = false;
+                    if(other_tile.deleted != true){
+                        if(other_tile.time > tile.time && other_tile.time < (tile.time + new_duration) && other_tile.day == tile.day){
+                            ok = false;
+                        }
                     }
                 }
             }
@@ -310,8 +314,10 @@ class Editor extends React.Component {
                 if(i!=index){
                     var tile = gridItems[index];
                     var other_tile = gridItems[i];
-                    if(other_tile.time > tile.time && other_tile.time < (tile.time + new_duration) && other_tile.day == tile.day){
-                        ok = false;
+                    if(other_tile.deleted != true){
+                        if(other_tile.time > tile.time && other_tile.time < (tile.time + new_duration) && other_tile.day == tile.day){
+                            ok = false;
+                        }
                     }
                 }
             }
