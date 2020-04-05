@@ -6,6 +6,7 @@ CREATE TABLE "tiles" (
 	"prempv"	TEXT NOT NULL,
 	"postmpv"	TEXT NOT NULL,
 	"loopmpv"	TEXT NOT NULL,
+	"shufflempv" TEXT NOT NULL,
 	"day"	INTEGER NOT NULL,
 	"time"	TEXT NOT NULL,
 	"duration"	REAL NOT NULL,

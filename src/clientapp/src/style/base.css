@@ -113,6 +113,32 @@
 /*.tile:hover{
 }*/
 
+.time-line{
+    box-sizing: border-box;
+    position: absolute;
+    height: 3px;
+    background-color:
+    #0D0D0D;
+    width: 93.75%;
+    margin-left: 6.25%;
+    z-index: 10;
+}
+
+.time-line::before{
+    content: "Now";
+    background-color:black;
+    padding: 0px 5px;
+    width: 6.25%;
+    text-align: center;
+    display: inline-block;
+    top: -.7rem;
+    position: relative;
+    height: 1.4rem;
+    font-size: .9rem;
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+    color:white;
+}
 
 .side{
     padding-top:0em !important;

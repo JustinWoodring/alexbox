@@ -31,9 +31,17 @@ class NavMenu extends React.Component {
             var button = <Button disabled color="secondary">Save</Button>
         }
 
+        if(this.props.config != null){
+            var config_logo = this.props.config.ui_logo;
+            var config_name = this.props.config.ui_name;
+        }else{
+            var config_logo = "logo.png";
+            var config_name = "AlexBox";
+        }
+
         return (
             <Navbar className="planner-navbar" color="dark" dark expand="md">
-                <NavbarBrand><img className="logo" src="logo.png"/>AlexBox</NavbarBrand>
+                <NavbarBrand><img className="logo" src={config_logo}/>{config_name}</NavbarBrand>
                 <Nav className="ml-auto" navbar>
                     <NavItem>
                         {button}&ensp;

@@ -6,6 +6,7 @@ table! {
         prempv -> Text,
         postmpv -> Text,
         loopmpv -> Text,
+        shufflempv -> Text,
         day -> Integer,
         time -> Text,
         duration -> Float,

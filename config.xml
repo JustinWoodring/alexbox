@@ -1,0 +1,14 @@
+<Config>
+	<UIName>
+		AlexBox
+	</UIName>
+	<UILogo>
+		logo.png
+	</UILogo>
+	<ServerAddress>
+		0.0.0.0
+	</ServerAddress>
+	<BindPort>
+		1985
+	</BindPort>
+</Config>

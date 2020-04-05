@@ -13,6 +13,7 @@ class Base extends React.Component {
           shouldSync: false,
           serverRunning: false,
           modified: false,
+          config: null,
         }
         this.syncCallback = this.syncCallback.bind(this);
         this.toggleRunCallback = this.toggleRunCallback.bind(this);
@@ -45,7 +46,14 @@ class Base extends React.Component {
         this.setState({serverRunning: false});
       }), 2000);*/
       /*'Content-Type': 'application/json', 'Cache-Control': 'no-cache'*/
-  }
+
+      axios.get('/config').then(res => {
+        this.setState({config: res.data});
+        document.getElementById("title").innerText=res.data.ui_name;
+      }).catch((error) => {
+          this.setState({serverRunning: false});
+      })
+    }
 
 
     toggleRunCallback(){
@@ -64,7 +72,7 @@ class Base extends React.Component {
     }
 
     render() {
-      return (<div><NavMenu syncCallback={this.syncCallback} isModified={this.state.modified} Running={this.state.serverRunning} toggleRunCallback={this.toggleRunCallback}/><Editor syncCallback={this.syncCallback} toggleModifiedCallbackTrue={this.toggleModifiedCallbackTrue} toggleModifiedCallbackFalse={this.toggleModifiedCallbackFalse} shouldSync={this.state.shouldSync}/><Footer/></div>);
+      return (<div><NavMenu config={this.state.config} syncCallback={this.syncCallback} isModified={this.state.modified} Running={this.state.serverRunning} toggleRunCallback={this.toggleRunCallback}/><Editor syncCallback={this.syncCallback} toggleModifiedCallbackTrue={this.toggleModifiedCallbackTrue} toggleModifiedCallbackFalse={this.toggleModifiedCallbackFalse} shouldSync={this.state.shouldSync}/><Footer/></div>);
     }
   }
 

@@ -10,6 +10,10 @@ use diesel::prelude::*;
 use diesel::SqliteConnection;
 use dotenv::dotenv;
 use std::env;
+use std::fs::File;
+use std::io::BufReader;
+use xml::EventReader;
+use xml::reader::XmlEvent;
 
 pub fn establish_connection() -> SqliteConnection {
     dotenv().ok();
@@ -123,5 +127,60 @@ impl Time{
         } else{
             return true
         }
+    }
+}
+
+pub struct Config{
+    pub ui_name: String,
+    pub ui_logo: String,
+    pub server_address : String, 
+    pub bind_port : String
+}
+
+impl Config{
+    pub fn get_config() -> Result<Config, String>{
+        let mut current_value = "".to_string();
+        let mut uiname : std::string::String = "alexbox".to_string();
+        let mut uilogo : std::string::String = "logo.png".to_string();
+        let mut server_address : std::string::String = "0.0.0.0".to_string();
+        let mut bind_port : std::string::String = "1984".to_string();
+        let file = File::open("config.xml").unwrap();
+        let file = BufReader::new(file);
+
+        let parser = EventReader::new(file);
+        for e in parser {
+            match e {
+                Ok(XmlEvent::StartElement { name, .. }) => {
+                    if(current_value == "" || current_value == "Config"){
+                        current_value = name.local_name;
+                    }
+                }
+                Ok(XmlEvent::Characters(string)) =>{
+                    let string = string.trim().to_string();
+                    match(current_value.as_str()){
+                        "Config" => {current_value = "".to_string()}
+                        "UIName" => {uiname = string;},
+                        "UILogo" => {uilogo = string;},
+                        "ServerAddress" => {server_address = string;},
+                        "BindPort" => {bind_port = string;},
+                        _ => {}
+                    }
+                },
+                Ok(XmlEvent::EndElement { name }) => {
+                    current_value = "".to_string();
+                }
+                Err(e) => {
+                    println!("Error: {}", e);
+                    break;
+                }
+                _ => {}
+            }
+        }
+        return Ok(Config {
+            ui_name: uiname,
+            ui_logo: uilogo,
+            server_address: server_address,
+            bind_port: bind_port,
+        })
     }
 }

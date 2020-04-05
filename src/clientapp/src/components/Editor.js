@@ -11,7 +11,10 @@ class Editor extends React.Component {
         this.state = {
             gridItems: [],
             selectedTile: null,
-            isSyncing: true
+            isSyncing: true,
+            linestyle: {
+                top: (50+1)+"px",
+            }
         }
 
 
@@ -22,6 +25,7 @@ class Editor extends React.Component {
         this.handlePreMPV = this.handlePreMPV.bind(this);
         this.handlePostMPV = this.handlePostMPV.bind(this);
         this.handleLoopMPV = this.handleLoopMPV.bind(this);
+        this.handleShuffleMPV = this.handleShuffleMPV.bind(this);
         this.handleDuration = this.handleDuration.bind(this);
         this.handleDurationPositive = this.handleDurationPositive.bind(this);
         this.handleDurationNegative = this.handleDurationNegative.bind(this);
@@ -55,6 +59,9 @@ class Editor extends React.Component {
     }
 
     update(){
+        var date = new Date()
+        var number = 50 + (50*(date.getHours()+(date.getMinutes()/60)));
+        this.setState({linestyle: {top: number+"px",}});
         var modified = false;
         for (var i =0; i<this.state.gridItems.length; i++){
             if(this.state.gridItems[i].modified==true){
@@ -78,10 +85,11 @@ class Editor extends React.Component {
             var item = {};
             item.id = -1
             item.title = "No Title"
-            item.mpv = "MPV Command"
-            item.prempv = "Pre Roll MPV Command"
-            item.postmpv = "Post Roll MPV Command"
+            item.mpv = ""
+            item.prempv = ""
+            item.postmpv = ""
             item.loopmpv = "no"
+            item.shufflempv = "no"
             item.modified = true;
             item.day = Math.floor(x/((rect.right-rect.left)/8))-1
             item.time = Math.floor(y/((rect.bottom-rect.top)/50))/2-1
@@ -118,6 +126,7 @@ class Editor extends React.Component {
                     object.prempv = gridItems[i].prempv.toString();
                     object.postmpv = gridItems[i].postmpv.toString();
                     object.loopmpv = gridItems[i].loopmpv.toString();
+                    object.shufflempv = gridItems[i].shufflempv.toString();
                     object.day = gridItems[i].day.toString();
                     if(gridItems[i].time*2 % 2==1){
                         if(gridItems[i].time<10){
@@ -142,6 +151,7 @@ class Editor extends React.Component {
                     object.prempv = gridItems[i].prempv.toString();
                     object.postmpv = gridItems[i].postmpv.toString();
                     object.loopmpv = gridItems[i].loopmpv.toString();
+                    object.shufflempv = gridItems[i].shufflempv.toString();
                     object.day = gridItems[i].day.toString();
                     if(gridItems[i].time*2 % 2==1){
                         if(gridItems[i].time<10){
@@ -250,6 +260,13 @@ class Editor extends React.Component {
         this.setState({gridItems: gridItems});
     }
 
+    handleShuffleMPV(e, index){
+        e.preventDefault();
+        var gridItems = this.state.gridItems;
+        gridItems[index].shufflempv = e.target.value;
+        gridItems[index].modified = true;
+        this.setState({gridItems: gridItems});
+    }
 
     handleDuration(e, index){
         e.preventDefault();
@@ -364,6 +381,7 @@ class Editor extends React.Component {
         this.setState({selectedTile:index});
     }
 
+
     render() {
         if(this.props.shouldSync){
             this.sync();
@@ -390,6 +408,7 @@ class Editor extends React.Component {
         return !this.state.isSyncing ? (
             <div className="editor-wrapper">
                 <div className="time-table">
+                    <div className="time-line" style={this.state.linestyle}></div>
                     <div onClick={this.handleGridClick} className="grid">
                         {this.state.gridItems.map((value, index) => {
                             var start = value.time*2+3 //We subtracted an extra 1 to make it 0 in times.
@@ -417,7 +436,7 @@ class Editor extends React.Component {
                         })}
                     </Table>
                 </div>
-                <Config handleDelete={this.handleDelete} handleTitle={this.handleTitle} handleDuration={this.handleDuration} handleDurationPositive={this.handleDurationPositive} handleDurationNegative={this.handleDurationNegative} handleColor={this.handleColor} handleMPV={this.handleMPV} handlePreMPV={this.handlePreMPV} handlePostMPV={this.handlePostMPV} handleLoopMPV={this.handleLoopMPV} selectedTile={this.state.selectedTile} gridItems={this.state.gridItems} className="config-panel"/>
+                <Config handleDelete={this.handleDelete} handleTitle={this.handleTitle} handleDuration={this.handleDuration} handleDurationPositive={this.handleDurationPositive} handleDurationNegative={this.handleDurationNegative} handleColor={this.handleColor} handleMPV={this.handleMPV} handlePreMPV={this.handlePreMPV} handlePostMPV={this.handlePostMPV} handleLoopMPV={this.handleLoopMPV} handleShuffleMPV={this.handleShuffleMPV} selectedTile={this.state.selectedTile} gridItems={this.state.gridItems} className="config-panel"/>
             </div>
         ) : (<div class="syncSpace"><Spinner style={{margin: "auto", width: '3rem', height: '3rem'}} color="info"/></div>) ;
     }
@@ -431,6 +450,7 @@ class Config extends React.Component {
         this.handlePreMPV = this.props.handlePreMPV;
         this.handlePostMPV = this.props.handlePostMPV;
         this.handleLoopMPV = this.props.handleLoopMPV;
+        this.handleShuffleMPV = this.props.handleShuffleMPV;
         this.handleDuration = this.props.handleDuration;
         this.handleDurationPositive = this.props.handleDurationPositive;
         this.handleDurationNegative = this.props.handleDurationNegative;
@@ -554,6 +574,13 @@ class Config extends React.Component {
                                 <FormGroup>
                                     <Label htmlFor="loop">Loop</Label>
                                     <Input id="Loop" onChange={(e) => this.handleLoopMPV(e, this.props.selectedTile)} value={this.props.gridItems[this.props.selectedTile].loopmpv} type="select">
+                                        <option value="no">No</option>
+                                        <option value="yes">Yes</option>
+                                    </Input>
+                                </FormGroup>
+                                <FormGroup>
+                                    <Label htmlFor="shuffle">Shuffle</Label>
+                                    <Input id="Shuffle" onChange={(e) => this.handleShuffleMPV(e, this.props.selectedTile)} value={this.props.gridItems[this.props.selectedTile].shufflempv} type="select">
                                         <option value="no">No</option>
                                         <option value="yes">Yes</option>
                                     </Input>

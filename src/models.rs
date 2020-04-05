@@ -11,6 +11,7 @@ pub struct Tile {
     pub prempv: String,
     pub postmpv: String,
     pub loopmpv: String,
+    pub shufflempv: String,
     pub day: i32,
     pub time: String,
     pub duration: f32,

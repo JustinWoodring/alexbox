@@ -31,6 +31,7 @@ pub async fn get_tile() -> Result<impl warp::Reply, warp::Rejection> {
                 prempv: tile.prempv,
                 postmpv: tile.postmpv,
                 loopmpv: tile.loopmpv,
+                shufflempv: tile.shufflempv,
                 day: tile.day,
                 time: my_time.to_float(),
                 duration: tile.duration,
@@ -100,6 +101,15 @@ pub async fn post_tile(input : Vec<HashMap<String, String>>) -> Result<impl warp
             }
         }else{ok=false;}
 
+        //new shuffle mpv
+        let mut new_shufflempv = "";
+        if let Some(value) = tile.get("shufflempv"){
+            new_shufflempv = value;
+            if new_shufflempv.len() > 10 || (new_shufflempv != "yes" && new_shufflempv != "no"){
+                ok=false;
+            }
+        }else{ok=false;}
+
         //new day
         let mut new_day = -1;
         if let Some(value) = tile.get("day"){
@@ -156,6 +166,7 @@ pub async fn post_tile(input : Vec<HashMap<String, String>>) -> Result<impl warp
                 prempv: new_prempv.to_string(),
                 postmpv: new_postmpv.to_string(),
                 loopmpv: new_loopmpv.to_string(),
+                shufflempv: new_shufflempv.to_string(),
                 day: new_day,
                 time: new_time.to_string(),
                 duration: new_duration,
@@ -287,6 +298,15 @@ pub async fn put_tile(input : Vec<HashMap<String, String>>) -> Result<impl warp:
             }
         }else{return Ok(warp::reply::with_status(warp::reply::json(&String::from("Loop MPV command could not be found")), warp::http::StatusCode::BAD_REQUEST));}
 
+         //new shuffle mpv
+         let mut new_shufflempv = "";
+         if let Some(value) = tile.get("shufflempv"){
+             new_shufflempv = value;
+             if new_shufflempv.len() > 10 || (new_shufflempv != "yes" && new_shufflempv != "no"){
+                 return Ok(warp::reply::with_status(warp::reply::json(&String::from("Shuffle MPV command was too long or short and possible not Yes or No")), warp::http::StatusCode::BAD_REQUEST));
+             }
+         }else{return Ok(warp::reply::with_status(warp::reply::json(&String::from("Shuffle MPV command could not be found")), warp::http::StatusCode::BAD_REQUEST));}
+
         //new day
         let mut new_day = -1;
         if let Some(value) = tile.get("day"){
@@ -353,6 +373,7 @@ pub async fn put_tile(input : Vec<HashMap<String, String>>) -> Result<impl warp:
             prempv: new_prempv.to_string(),
             postmpv: new_postmpv.to_string(),
             loopmpv: new_loopmpv.to_string(),
+            shufflempv: new_shufflempv.to_string(),
             day: new_day,
             time: new_time.to_string(),
             duration: new_duration,
@@ -366,6 +387,7 @@ pub async fn put_tile(input : Vec<HashMap<String, String>>) -> Result<impl warp:
             prempv: new_prempv.to_string(),
             postmpv: new_postmpv.to_string(),
             loopmpv: new_loopmpv.to_string(),
+            shufflempv: new_shufflempv.to_string(),
             day: new_day,
             time: new_time.to_string(),
             duration: new_duration,
@@ -379,6 +401,7 @@ pub async fn put_tile(input : Vec<HashMap<String, String>>) -> Result<impl warp:
             prempv: new_prempv.to_string(),
             postmpv: new_postmpv.to_string(),
             loopmpv: new_loopmpv.to_string(),
+            shufflempv: new_shufflempv.to_string(),
             day: new_day,
             time: new_time.to_string(),
             duration: new_duration,
