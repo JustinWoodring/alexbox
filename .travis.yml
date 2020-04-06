@@ -86,7 +86,7 @@ matrix:
 before_install:
   - set -e
   - rustup self update
-  - sudo apt-get -y install libsqlite3 libsqlite3-dev
+  - sudo apt-get -y install libsqlite3-0 libsqlite3-dev
 
 install:
   - sh ci/install.sh
