@@ -18,10 +18,12 @@ mod api; // get_tile! is usable with this in main.rs
 
 use self::{
     routes::{
+        playnow_route,
         tile_route,
         config_route
     },
     handlers::{
+        playnow_handler,
         tile_handler,
         config_handler
     },
@@ -45,7 +47,7 @@ async fn main() {
     /*let hello = warp::path!("hello" / String)
         .map(|name| format!("Hello, {}!", name));*/
 
-    let routes = index.or((get_tile!()).or(post_tile!()).or(put_tile!()).or(delete_tile!())).or(get_config!());
+    let routes = index.or((get_tile!()).or(post_tile!()).or(put_tile!()).or(delete_tile!())).or(get_config!()).or(post_playnow!());
 
     let socket_addr : SocketAddr = (server_address.to_string()+":"+&bind_port).parse().unwrap();
 

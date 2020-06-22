@@ -134,7 +134,9 @@ pub struct Config{
     pub ui_name: String,
     pub ui_logo: String,
     pub server_address : String, 
-    pub bind_port : String
+    pub bind_port : String,
+    pub command_start : String,
+    pub command_end : String
 }
 
 impl Config{
@@ -144,6 +146,8 @@ impl Config{
         let mut uilogo : std::string::String = "logo.png".to_string();
         let mut server_address : std::string::String = "0.0.0.0".to_string();
         let mut bind_port : std::string::String = "1984".to_string();
+        let mut command_start : std::string::String = "".to_string();
+        let mut command_end : std::string::String = "".to_string();
         let file = File::open("config.xml").unwrap();
         let file = BufReader::new(file);
 
@@ -163,6 +167,8 @@ impl Config{
                         "UILogo" => {uilogo = string;},
                         "ServerAddress" => {server_address = string;},
                         "BindPort" => {bind_port = string;},
+                        "CommandStart" => {command_start = string;},
+                        "CommandEnd" => {command_end = string;},
                         _ => {}
                     }
                 },
@@ -181,6 +187,8 @@ impl Config{
             ui_logo: uilogo,
             server_address: server_address,
             bind_port: bind_port,
+            command_start: command_start,
+            command_end: command_end
         })
     }
 }

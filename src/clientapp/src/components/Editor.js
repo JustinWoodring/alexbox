@@ -31,6 +31,7 @@ class Editor extends React.Component {
         this.handleDurationNegative = this.handleDurationNegative.bind(this);
         this.handleColor = this.handleColor.bind(this);
         this.handleDelete = this.handleDelete.bind(this);
+        this.handlePlayNow = this.handlePlayNow.bind(this);
         this.toggleModifiedCallbackTrue = this.props.toggleModifiedCallbackTrue;
         this.toggleModifiedCallbackFalse = this.props.toggleModifiedCallbackFalse;
         this.update = this.update.bind(this);
@@ -375,6 +376,20 @@ class Editor extends React.Component {
         }
     }
 
+    handlePlayNow(e, index){
+        e.preventDefault();
+        //If no ID simply remove it.
+        var oldGridItems = this.state.gridItems;
+        axios({
+            method: 'post',
+            url: '/playnow',
+            data: {
+                command: oldGridItems[index].mpv,
+            },
+            config: { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache'  } },
+        });
+    }
+
     squareClick(e,index){
         e.preventDefault();
         e.stopPropagation();
@@ -436,7 +451,7 @@ class Editor extends React.Component {
                         })}
                     </Table>
                 </div>
-                <Config handleDelete={this.handleDelete} handleTitle={this.handleTitle} handleDuration={this.handleDuration} handleDurationPositive={this.handleDurationPositive} handleDurationNegative={this.handleDurationNegative} handleColor={this.handleColor} handleMPV={this.handleMPV} handlePreMPV={this.handlePreMPV} handlePostMPV={this.handlePostMPV} handleLoopMPV={this.handleLoopMPV} handleShuffleMPV={this.handleShuffleMPV} selectedTile={this.state.selectedTile} gridItems={this.state.gridItems} className="config-panel"/>
+                <Config handleDelete={this.handleDelete} handleTitle={this.handleTitle} handlePlayNow={this.handlePlayNow} handleDuration={this.handleDuration} handleDurationPositive={this.handleDurationPositive} handleDurationNegative={this.handleDurationNegative} handleColor={this.handleColor} handleMPV={this.handleMPV} handlePreMPV={this.handlePreMPV} handlePostMPV={this.handlePostMPV} handleLoopMPV={this.handleLoopMPV} handleShuffleMPV={this.handleShuffleMPV} selectedTile={this.state.selectedTile} gridItems={this.state.gridItems} className="config-panel"/>
             </div>
         ) : (<div class="syncSpace"><Spinner style={{margin: "auto", width: '3rem', height: '3rem'}} color="info"/></div>) ;
     }
@@ -455,6 +470,7 @@ class Config extends React.Component {
         this.handleDurationPositive = this.props.handleDurationPositive;
         this.handleDurationNegative = this.props.handleDurationNegative;
         this.handleColor = this.props.handleColor;
+        this.handlePlayNow = this.props.handlePlayNow;
         this.handleDelete = this.props.handleDelete;
     
         this.state = {
@@ -553,6 +569,7 @@ class Config extends React.Component {
                                     </Input>
                                 </FormGroup>
                                 <FormGroup className="rightside">
+                                    <Button color="info" onClick={(e) => this.handlePlayNow(e, this.props.selectedTile)}>Play Now</Button>&ensp;
                                     <Button color="danger" onClick={(e) => this.handleDelete(e, this.props.selectedTile)}>Delete</Button>
                                 </FormGroup>
                             </Form>

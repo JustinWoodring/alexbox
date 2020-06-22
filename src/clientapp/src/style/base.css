@@ -171,6 +171,7 @@ td, th{
     width:33% !important;
     border-left: 3px solid #F2D544;
     background-color: #252625;
+    z-index:15;
 }
 
 .editor-wrapper > .config-panel > .config-panel-inner{

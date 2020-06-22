@@ -11,4 +11,8 @@
 	<BindPort>
 		1985
 	</BindPort>
+	<CommandStart>
+	</CommandStart>
+	<CommandEnd>
+	</CommandEnd>
 </Config>
