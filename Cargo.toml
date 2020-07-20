@@ -1,7 +1,7 @@
 [package]
 name = "alexbox"
-version = "0.1.0"
-authors = ["rootyjr <41842051+Rootyjr@users.noreply.github.com>"]
+version = "0.1.1"
+authors = ["Booglejr <rooty@kwtechllc.com>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

@@ -1,4 +1,4 @@
-use url::Url;
+/*use url::Url;
 use std::process::Command;
 use std::env;
 use std::path::Path;
@@ -61,10 +61,9 @@ fn main() {
 				//.args(&["-c", "mv src/clientapp/build",&(out_dir.clone()+"/../../../static_files")]) 
 				.output()
 				.expect("failed to execute process");
-		Command::new("sh")
-				.args(&["-c", "cp config.json static_files/config.json"]) 
-				//.args(&["-c", "mv src/clientapp/build",&(out_dir.clone()+"/../../../static_files")]) 
-				.output()
-				.expect("failed to execute process");
 	};
+}*/
+
+fn main() {
+
 }
