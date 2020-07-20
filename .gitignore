@@ -7,3 +7,5 @@ src/clientapp/build
 code.code-workspace
 .git
 planner.db
+build-pi/*
+build/*
