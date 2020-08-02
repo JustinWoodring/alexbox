@@ -11,6 +11,13 @@ fn path_prefix() -> BoxedFilter<()> {
         .boxed()
 }
 
+pub fn get_current_tile() -> BoxedFilter<()> {
+    warp::get() // 1. Only accept GET
+        .and(path_prefix())
+        .and(warp::path("current").boxed()) // 2. That starts with /tile
+        .boxed()
+}
+
 pub fn get_tile() -> BoxedFilter<()> {
     warp::get() // 1. Only accept GET
         .and(path_prefix()) // 2. That starts with /tile

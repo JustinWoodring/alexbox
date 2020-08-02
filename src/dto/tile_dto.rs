@@ -19,6 +19,17 @@ use self::super::super::schema::tiles;
     pub color: i32
 }
 
+#[derive(Deserialize, Serialize)]
+ pub struct GetCurrentTileDTO {
+    pub id: i32,
+    pub title: String,
+    pub mpv: String,
+    pub time: f32,
+    pub duration: f32,
+    pub systemTime: String,
+}
+
+
 #[derive(Deserialize, Serialize, Insertable)]
 #[table_name="tiles"]
 pub struct PostTileDTO {

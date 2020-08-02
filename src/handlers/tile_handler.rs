@@ -8,6 +8,7 @@ use self::alexbox::dto::tile_dto::*;
 use self::models::*;
 use self::diesel::prelude::*;
 use std::collections::HashMap;
+use chrono::prelude::*;
 
 /*
 Please sir, I want some more tiles...
@@ -42,6 +43,60 @@ pub async fn get_tile() -> Result<impl warp::Reply, warp::Rejection> {
     }
 
     return Ok(warp::reply::json(&response));
+}
+
+pub async fn get_current_tile() -> Result<impl warp::Reply, warp::Rejection> {
+    use alexbox::schema::tiles::dsl::*;
+    let connection = establish_connection();
+
+    let results = tiles
+        .load::<Tile>(&connection)
+        .expect("Error loading posts");
+    
+    //Get system time.
+    let local: DateTime<Local> = Local::now();
+
+    //Get current minute for creating localtime.
+    let mut min = local.format("%M").to_string();
+
+    if min.parse::<u32>().unwrap() < 30 {
+        min = "00".to_string();
+    }else {
+        min = "30".to_string();
+    }
+
+    //Get local day (0-6) and time.
+    let localday = local.format("%w").to_string();
+    let localtime = Time::new(&format!("{}:{}:00",&local.format("%Y-%m-%d %H").to_string(),min)).unwrap();
+
+    for tile in results {
+        //If we can read time then
+        if let Some(my_time) = Time::new(&tile.time){
+            //If tile times match up to local time then
+            if 
+                my_time <= localtime && 
+                localtime.to_float() <= (my_time.to_float()+tile.duration) && 
+                localday.parse::<i32>().unwrap() == tile.day
+            {
+                //create dto
+                let response: GetCurrentTileDTO = GetCurrentTileDTO {
+                    id: tile.id,
+                    title: tile.title,
+                    mpv: tile.mpv,
+                    time: my_time.to_float(),
+                    duration: tile.duration,
+                    systemTime: local.format("%H:%M").to_string()
+                };
+
+                //return it.
+                return Ok(warp::reply::json(&response));
+            }
+        }
+    }
+
+
+    //Or return nothing.
+    return Ok(warp::reply::json(&()));
 }
 
 

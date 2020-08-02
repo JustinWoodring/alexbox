@@ -4,6 +4,12 @@ version = "0.1.1"
 authors = ["Booglejr <rooty@kwtechllc.com>"]
 edition = "2018"
 
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = 'abort'
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
@@ -16,6 +22,7 @@ diesel_migrations = {version = "1.4.0"}
 dotenv = "0.15.0"
 libsqlite3-sys = { version = "0.9.1", features = ["bundled"] }
 xml-rs = "0.8.1"
+chrono = "0.4"
 
 [build-dependencies]
 url = "2.1.1"

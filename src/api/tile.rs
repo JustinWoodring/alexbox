@@ -7,6 +7,14 @@ macro_rules! get_tile {
 }
 
 #[macro_export]
+macro_rules! get_current_tile {
+    () => {
+        tile_route::get_current_tile()
+        .and_then(tile_handler::get_current_tile)
+    }
+}
+
+#[macro_export]
 macro_rules! post_tile {
     () => {
         tile_route::post_tile()

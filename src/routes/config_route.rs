@@ -1,5 +1,4 @@
 extern crate alexbox;
-use std::collections::HashMap;
 
 use warp::{
     filters::BoxedFilter,
