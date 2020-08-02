@@ -13,7 +13,7 @@ You'll need docker, rust, cross, and cargo-strip.
 3. Then run
 ```
 cargo install cargo-strip
-cargo install cross (only do this for pi)
+cargo install cross
 ```
 
 4. Now run the following to actually run the server.
@@ -23,7 +23,7 @@ make test
 ```
 
 ## Installing
-1. Do every step in Running except replace `make test` with `make package` or `make package-pi` <- (Need cross for this.)
+1. Do every step in Running except replace `make test` with `make package` or `make package-pi`
 
 2. All the files you need to install somewhere will be placed into `build` or `build-pi`
 
