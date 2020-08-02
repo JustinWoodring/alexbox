@@ -1,11 +1,11 @@
 [package]
 name = "alexbox"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Booglejr <rooty@kwtechllc.com>"]
 edition = "2018"
 
 [profile.release]
-opt-level = 3
+opt-level = 'z'
 lto = true
 codegen-units = 1
 panic = 'abort'
