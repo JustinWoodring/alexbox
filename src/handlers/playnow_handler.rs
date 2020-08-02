@@ -19,7 +19,7 @@ pub async fn post_playnow(input : HashMap<String, String>) -> Result<impl warp::
         println!("Result:");
         println!("{:?}", result);
 
-        return Ok(warp::reply::with_status(warp::reply::json(&String::from("Here goes nothing.")), warp::http::StatusCode::IM_A_TEAPOT))
+        return Ok(warp::reply::with_status(warp::reply::json(&String::from("Here goes nothing.")), warp::http::StatusCode::OK))
     }else{
         return Ok(warp::reply::with_status(warp::reply::json(&String::from("Missing command.")), warp::http::StatusCode::BAD_REQUEST))
     }
