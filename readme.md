@@ -1,7 +1,6 @@
 # Alexbox
-
-Alexbox is a scheduling tool for mpv that lets schedule media to be played at certain times of the day.
 ![Screenshot](https://github.com/Booglejr/alexbox/raw/assets/images/alexbox.png)
+Alexbox is a scheduling tool for mpv that lets schedule media to be played at certain times of the day. The python script that connects with mpv has been uploaded yet.
 
 ## Running
 
