@@ -28,3 +28,7 @@ make test
 2. All the files you need to install somewhere will be placed into `build` or `build-pi`
 
 3. Take these files and put them somewhere like `/etc/opt/alexbox`
+
+## Documentation
+
+For more documentation please see the wiki, [Alexbox Wiki](https://github.com/Booglejr/alexbox/wiki)
