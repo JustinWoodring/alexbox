@@ -1,18 +1,18 @@
-<Config>
-	<UIName>
-		AlexBox
-	</UIName>
-	<UILogo>
-		logo.png
-	</UILogo>
-	<ServerAddress>
-		0.0.0.0
-	</ServerAddress>
-	<BindPort>
-		1985
-	</BindPort>
-	<CommandStart>
-	</CommandStart>
-	<CommandEnd>
-	</CommandEnd>
-</Config>
+<public-component>
+	<ui>
+		<name>AlexBox</name>
+		<logo>logo.png</logo>
+		<tile-colors>
+			<color hex-color="#87D962">Green</color>
+			<color hex-color="#F2D544">Yellow</color>
+			<color hex-color="#D99759">Orange</color>
+			<color hex-color="#D96459">Red</color>
+			<color hex-color="#D962C5">Pink</color>
+		</tile-colors>
+	</ui>
+</public-component>
+<private-component>
+	<server-address>0.0.0.0</server-address>
+	<bind-port>1985</bind-port>
+	<database-url>alexbox.db</database-url>
+</private-component>

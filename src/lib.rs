@@ -4,22 +4,22 @@ pub mod dto;
 
 #[macro_use]
 extern crate diesel;
-extern crate dotenv;
 
 use diesel::prelude::*;
 use diesel::SqliteConnection;
-use dotenv::dotenv;
-use std::env;
 use std::fs::File;
 use std::io::BufReader;
+use std::io::Write;
 use xml::EventReader;
 use xml::reader::XmlEvent;
 
-pub fn establish_connection() -> SqliteConnection {
-    dotenv().ok();
 
-    let database_url = env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set");
+pub fn establish_connection() -> SqliteConnection {
+    let config = Config::get_config();
+
+    let database_url = config
+        .expect("Could not locate database_url in config.")
+        .database_url;
     SqliteConnection::establish(&database_url)
         .expect(&format!("Error connecting to {}", database_url))
 }
@@ -133,47 +133,147 @@ impl Time{
 pub struct Config{
     pub ui_name: String,
     pub ui_logo: String,
+    pub ui_colors: Vec<(String, String)>,
     pub server_address : String, 
     pub bind_port : String,
-    pub command_start : String,
-    pub command_end : String
+    pub database_url : String
 }
 
 impl Config{
+    pub fn defaults() -> String{
+        return 
+
+r##"
+<public-component>
+	<ui>
+		<name>AlexBox</name>
+		<logo>logo.png</logo>
+		<tile-colors>
+            <color hex-color="#87D962">Green</color>
+            <color hex-color="#F2D544">Yellow</color>
+            <color hex-color="#D99759">Orange</color>
+            <color hex-color="#D96459">Red</color>
+            <color hex-color="#D962C5">Pink</color>
+		</tile-colors>
+	</ui>
+</public-component>
+<private-component>
+	<server-address>0.0.0.0</server-address>
+    <bind-port>1985</bind-port>
+    <database-url>alexbox.db</database-url>
+</private-component>
+"##.to_string();
+
+    }
+
+
     pub fn get_config() -> Result<Config, String>{
-        let mut current_value = "".to_string();
-        let mut uiname : std::string::String = "alexbox".to_string();
-        let mut uilogo : std::string::String = "logo.png".to_string();
+        let mut elements = Vec::new();
+        let mut ui_name : std::string::String = "alexbox".to_string();
+        let mut ui_logo : std::string::String = "logo.png".to_string();
+        let mut ui_colors : Vec<(String, String)> = Vec::new();
         let mut server_address : std::string::String = "0.0.0.0".to_string();
         let mut bind_port : std::string::String = "1984".to_string();
-        let mut command_start : std::string::String = "".to_string();
-        let mut command_end : std::string::String = "".to_string();
+        let mut database_url : std::string::String = "alexbox.db".to_string();
+
+        let read_test = File::open("config.xml");
+        if let Err(error) = read_test{
+            println!("Could not open config.xml!");
+            if error.kind() == std::io::ErrorKind::NotFound{
+                println!("Not found... Attempting to create.");
+                let write_attempt = File::create("config.xml");
+                if let Ok(mut writer) = write_attempt{
+                    if let Ok(()) = write!(writer, "{}", Config::defaults()){
+                        println!("File creation successful.");
+                    }else{
+                        println!("File creation failed, running defaults.");
+                    }
+                }
+            }
+        }
+
         let file = File::open("config.xml").unwrap();
         let file = BufReader::new(file);
-
         let parser = EventReader::new(file);
+
         for e in parser {
             match e {
-                Ok(XmlEvent::StartElement { name, .. }) => {
-                    if(current_value == "" || current_value == "Config"){
-                        current_value = name.local_name;
+                Ok(XmlEvent::StartElement { name, attributes, .. }) => {
+                    match name.local_name.as_str() {
+                        "public-component" => {
+                            if elements.last() == None {
+                                elements.push(Element::PublicComponent);
+                            }
+                        }
+                        "ui" => {
+                            if elements.last() == Some(&Element::PublicComponent) {
+                                elements.push(Element::Ui);
+                            }
+                        }
+                        "name" => {
+                            if elements.last() == Some(&Element::Ui) {
+                                elements.push(Element::Name);
+                            }
+                        }
+                        "logo" => {
+                            if elements.last() == Some(&Element::Ui) {
+                                elements.push(Element::Logo);
+                            }
+                        }
+                        "tile-colors" => {
+                            if elements.last() == Some(&Element::Ui) {
+                                elements.push(Element::TileColors);}
+                            }
+                        "color" => {
+                            if elements.last() == Some(&Element::TileColors) {
+                                elements.push(Element::Color(attributes));
+                            }
+                        }
+                        "private-component" => {
+                            if elements.last() == None {
+                                elements.push(Element::PrivateComponent);
+                            }
+                        }
+                        "server-address" => {
+                            if elements.last() == Some(&Element::PrivateComponent) {
+                                elements.push(Element::ServerAddress);
+                            }
+                        }
+                        "bind-port" => {
+                            if elements.last() == Some(&Element::PrivateComponent) {
+                                elements.push(Element::BindPort);
+                            }
+                        }
+                        "database-url" => {
+                            if elements.last() == Some(&Element::PrivateComponent) {
+                                elements.push(Element::DatabaseUrl);
+                            }
+                        }
+                        _ => {}
                     }
                 }
                 Ok(XmlEvent::Characters(string)) =>{
                     let string = string.trim().to_string();
-                    match(current_value.as_str()){
-                        "Config" => {current_value = "".to_string()}
-                        "UIName" => {uiname = string;},
-                        "UILogo" => {uilogo = string;},
-                        "ServerAddress" => {server_address = string;},
-                        "BindPort" => {bind_port = string;},
-                        "CommandStart" => {command_start = string;},
-                        "CommandEnd" => {command_end = string;},
+                    match elements.last(){
+                        Some(Element::Name) => {ui_name = string;},
+                        Some(Element::Logo) => {ui_logo = string;},
+                        Some(Element::Color(attributes)) => {
+                            if attributes.len()==1{
+                                if let Some(hex_color)=attributes.get(0){
+                                    if hex_color.name.local_name.as_str() == "hex-color"{
+                                        ui_colors.push((string, hex_color.value.clone()));
+                                    }
+                                }
+                            }
+                        },
+                        Some(Element::ServerAddress) => {server_address = string;},
+                        Some(Element::BindPort) => {bind_port = string;},
+                        Some(Element::DatabaseUrl) => {database_url = string;},
                         _ => {}
                     }
                 },
-                Ok(XmlEvent::EndElement { name }) => {
-                    current_value = "".to_string();
+                Ok(XmlEvent::EndElement { name: _ }) => {
+                    elements.pop();
                 }
                 Err(e) => {
                     println!("Error: {}", e);
@@ -183,12 +283,26 @@ impl Config{
             }
         }
         return Ok(Config {
-            ui_name: uiname,
-            ui_logo: uilogo,
+            ui_name: ui_name,
+            ui_logo: ui_logo,
+            ui_colors: ui_colors,
             server_address: server_address,
             bind_port: bind_port,
-            command_start: command_start,
-            command_end: command_end
+            database_url: database_url
         })
     }
+}
+
+#[derive(PartialEq, Eq)] 
+enum Element {
+    PublicComponent,
+    Ui,
+    Name,
+    Logo,
+    TileColors,
+    Color(Vec<xml::attribute::OwnedAttribute>),
+    PrivateComponent,
+    ServerAddress,
+    BindPort,
+    DatabaseUrl
 }

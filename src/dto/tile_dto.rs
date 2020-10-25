@@ -8,13 +8,9 @@ use self::super::super::schema::tiles;
  pub struct GetTileDTO {
     pub id: i32,
     pub title: String,
-    pub mpv: String,
-    pub prempv: String,
-    pub postmpv: String,
-    pub loopmpv: String,
-    pub shufflempv: String,
+    pub command: String,
     pub day: i32,
-    pub time: f32,
+    pub start_time: f32,
     pub duration: f32,
     pub color: i32
 }
@@ -23,10 +19,10 @@ use self::super::super::schema::tiles;
  pub struct GetCurrentTileDTO {
     pub id: i32,
     pub title: String,
-    pub mpv: String,
-    pub time: f32,
+    pub command: String,
+    pub start_time: f32,
     pub duration: f32,
-    pub systemTime: String,
+    pub system_time: String,
 }
 
 
@@ -34,13 +30,9 @@ use self::super::super::schema::tiles;
 #[table_name="tiles"]
 pub struct PostTileDTO {
     pub title: String,
-    pub mpv: String,
-    pub prempv: String,
-    pub postmpv: String,
-    pub loopmpv: String,
-    pub shufflempv: String,
+    pub command: String,
     pub day: i32,
-    pub time: String,
+    pub start_time: String,
     pub duration: f32,
     pub color: i32
 }

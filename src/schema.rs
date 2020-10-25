@@ -2,13 +2,9 @@ table! {
     tiles (id) {
         id -> Integer,
         title -> Text,
-        mpv -> Text,
-        prempv -> Text,
-        postmpv -> Text,
-        loopmpv -> Text,
-        shufflempv -> Text,
+        command -> Text,
         day -> Integer,
-        time -> Text,
+        start_time -> Text,
         duration -> Float,
         color -> Integer,
     }

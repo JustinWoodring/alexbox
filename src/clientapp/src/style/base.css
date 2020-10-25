@@ -85,22 +85,9 @@
     transition: .1s ease-in-out;
 }
 
-.tile.tile-color-1{
-    background-color:#87D962;
+.tile{
+    background-color:white;
 }
-.tile.tile-color-2{
-    background-color:#F2D544;
-}
-.tile.tile-color-3{
-    background-color:rgb(217, 151, 89);
-}
-.tile.tile-color-4{
-    background-color:#D96459;
-}
-.tile.tile-color-5{
-    background-color:rgb(217, 98, 197);
-}
-
 
 .tile:hover{
     border: 2px solid #D9D6D2;
@@ -207,16 +194,16 @@ form > .form-group.rightside{
     width:12px;
     height:12px;
     border-radius: 10em;
-    border: 2px solid #D9D6D2;
+    border: 1px solid #000;
     display: inline-block;
 }
 
 .running{
-    background-color: #87D962;
+    background-color: green;
 }
 
 .stopped{
-    background-color: #D96459;
+    background-color: red;
 }
 
 @media only screen and (max-width: 500px) {

@@ -24,17 +24,13 @@ pub async fn get_tile() -> Result<impl warp::Reply, warp::Rejection> {
     let mut response = Vec::new();
 
     for tile in results {
-        if let Some(my_time) = Time::new(&tile.time){
+        if let Some(my_time) = Time::new(&tile.start_time){
             let tile: GetTileDTO = GetTileDTO {
                 id: tile.id,
                 title: tile.title,
-                mpv: tile.mpv,
-                prempv: tile.prempv,
-                postmpv: tile.postmpv,
-                loopmpv: tile.loopmpv,
-                shufflempv: tile.shufflempv,
+                command: tile.command,
                 day: tile.day,
-                time: my_time.to_float(),
+                start_time: my_time.to_float(),
                 duration: tile.duration,
                 color: tile.color
             };
@@ -71,7 +67,7 @@ pub async fn get_current_tile() -> Result<impl warp::Reply, warp::Rejection> {
 
     for tile in results {
         //If we can read time then
-        if let Some(my_time) = Time::new(&tile.time){
+        if let Some(my_time) = Time::new(&tile.start_time){
             //If tile times match up to local time then
             if 
                 my_time <= localtime && 
@@ -82,10 +78,10 @@ pub async fn get_current_tile() -> Result<impl warp::Reply, warp::Rejection> {
                 let response: GetCurrentTileDTO = GetCurrentTileDTO {
                     id: tile.id,
                     title: tile.title,
-                    mpv: tile.mpv,
-                    time: my_time.to_float(),
+                    command: tile.command,
+                    start_time: my_time.to_float(),
                     duration: tile.duration,
-                    systemTime: local.format("%H:%M").to_string()
+                    system_time: local.format("%H:%M").to_string()
                 };
 
                 //return it.
@@ -119,48 +115,11 @@ pub async fn post_tile(input : Vec<HashMap<String, String>>) -> Result<impl warp
             }
         }else{ok=false;}
 
-        //new mpv
-        let mut new_mpv = "";
-        if let Some(value) = tile.get("mpv"){
-            new_mpv = value;
-            if new_mpv.len() > 1000{
-                ok=false;
-            }
-        }else{ok=false;}
-
-        //new pre mpv
-        let mut new_prempv = "";
-        if let Some(value) = tile.get("prempv"){
-            new_prempv = value;
-            if new_prempv.len() > 1000{
-                ok=false;
-            }
-        }else{ok=false;}
-
-        //new post mpv
-        let mut new_postmpv = "";
-        if let Some(value) = tile.get("postmpv"){
-            new_postmpv = value;
-            if new_postmpv.len() > 1000{
-                ok=false;
-            }
-        }else{ok=false;}
-
-
-        //new loop mpv
-        let mut new_loopmpv = "";
-        if let Some(value) = tile.get("loopmpv"){
-            new_loopmpv = value;
-            if new_loopmpv.len() > 10 || (new_loopmpv != "yes" && new_loopmpv != "no"){
-                ok=false;
-            }
-        }else{ok=false;}
-
-        //new shuffle mpv
-        let mut new_shufflempv = "";
-        if let Some(value) = tile.get("shufflempv"){
-            new_shufflempv = value;
-            if new_shufflempv.len() > 10 || (new_shufflempv != "yes" && new_shufflempv != "no"){
+        //new command
+        let mut new_command = "";
+        if let Some(value) = tile.get("command"){
+            new_command = value;
+            if new_command.len() > 1000{
                 ok=false;
             }
         }else{ok=false;}
@@ -179,7 +138,7 @@ pub async fn post_tile(input : Vec<HashMap<String, String>>) -> Result<impl warp
 
         //new time
         let mut new_time = "";
-        if let Some(value) = tile.get("time"){
+        if let Some(value) = tile.get("start_time"){
             new_time = value;
         }else{ok=false;}
         //new duration
@@ -193,7 +152,7 @@ pub async fn post_tile(input : Vec<HashMap<String, String>>) -> Result<impl warp
         let mut new_color = 0;
         if let Some(value) = tile.get("color"){
             if let Ok(value) = value.parse::<i32>(){
-                if value > 0 && value < 6 {
+                if value > 0 && value <= 20 {
                     new_color = value;
                 }else{
                     ok=false;
@@ -217,22 +176,18 @@ pub async fn post_tile(input : Vec<HashMap<String, String>>) -> Result<impl warp
             //What we will hopefully submit.
             let new = PostTileDTO {
                 title : new_title.to_string(),
-                mpv: new_mpv.to_string(),
-                prempv: new_prempv.to_string(),
-                postmpv: new_postmpv.to_string(),
-                loopmpv: new_loopmpv.to_string(),
-                shufflempv: new_shufflempv.to_string(),
+                command: new_command.to_string(),
                 day: new_day,
-                time: new_time.to_string(),
+                start_time: new_time.to_string(),
                 duration: new_duration,
                 color: new_color
             };
 
             //Compare against tiles in database if overlap return complaint.
-            if let Ok(current_db_tiles) = tiles.order(time.desc()).load::<Tile>(&connection) {
+            if let Ok(current_db_tiles) = tiles.order(start_time.desc()).load::<Tile>(&connection) {
                 for db_tile in current_db_tiles {
-                    let db_time = Time::new(&db_tile.time).unwrap(); //Database shouldn't contain malformed data. Cross my fingers.
-                    let post_time = Time::new(&new.time).unwrap(); //The conformance tests on 102 let us unwrap safely.
+                    let db_time = Time::new(&db_tile.start_time).unwrap(); //Database shouldn't contain malformed data. Cross my fingers.
+                    let post_time = Time::new(&new.start_time).unwrap(); //The conformance tests on 102 let us unwrap safely.
                     if db_tile.day == new.day {
                         if post_time > db_time && (db_tile.duration + db_time.to_float()) > post_time.to_float() {
                             return Ok(warp::reply::with_status(warp::reply::json(&String::from("Some db tile overruns a submitted tile")), warp::http::StatusCode::CONFLICT));
@@ -251,8 +206,8 @@ pub async fn post_tile(input : Vec<HashMap<String, String>>) -> Result<impl warp
             
             //Compare against other submitted tiles.
             for other_tile in &new_tiles{
-                let other_time = Time::new(&other_tile.time).unwrap(); //If its in the array it was already conformance tested.
-                let post_time = Time::new(&new.time).unwrap(); //If we are down here the same as above is true.
+                let other_time = Time::new(&other_tile.start_time).unwrap(); //If its in the array it was already conformance tested.
+                let post_time = Time::new(&new.start_time).unwrap(); //If we are down here the same as above is true.
                 if other_tile.day == new.day {
                     if post_time > other_time && (other_tile.duration + other_time.to_float()) > post_time.to_float() {
                         return Ok(warp::reply::with_status(warp::reply::json(&String::from("Some submitted tile overruns another submitted tile")), warp::http::StatusCode::CONFLICT));
@@ -316,51 +271,14 @@ pub async fn put_tile(input : Vec<HashMap<String, String>>) -> Result<impl warp:
             }
         }else{return Ok(warp::reply::with_status(warp::reply::json(&String::from("Title could not be found")), warp::http::StatusCode::BAD_REQUEST));}
 
-        //new mpv
-        let mut new_mpv = "";
-        if let Some(value) = tile.get("mpv"){
-            new_mpv = value;
-            if new_mpv.len() > 1000{
-                return Ok(warp::reply::with_status(warp::reply::json(&String::from("MPV command was too long or short")), warp::http::StatusCode::BAD_REQUEST));
+        //new command
+        let mut new_command = "";
+        if let Some(value) = tile.get("command"){
+            new_command = value;
+            if new_command.len() > 1000{
+                return Ok(warp::reply::with_status(warp::reply::json(&String::from("command command was too long or short")), warp::http::StatusCode::BAD_REQUEST));
             }
-        }else{return Ok(warp::reply::with_status(warp::reply::json(&String::from("MPV command could not be found")), warp::http::StatusCode::BAD_REQUEST));}
-        
-        //new pre mpv
-        let mut new_prempv = "";
-        if let Some(value) = tile.get("prempv"){
-            new_prempv = value;
-            if new_prempv.len() > 1000{
-                return Ok(warp::reply::with_status(warp::reply::json(&String::from("Pre MPV command was too long or short")), warp::http::StatusCode::BAD_REQUEST));
-            }
-        }else{return Ok(warp::reply::with_status(warp::reply::json(&String::from("Pre MPV command could not be found")), warp::http::StatusCode::BAD_REQUEST));}
-
-        //new post mpv
-        let mut new_postmpv = "";
-        if let Some(value) = tile.get("postmpv"){
-            new_postmpv = value;
-            if new_postmpv.len() > 1000{
-                return Ok(warp::reply::with_status(warp::reply::json(&String::from("Post MPV command was too long or short")), warp::http::StatusCode::BAD_REQUEST));
-            }
-        }else{return Ok(warp::reply::with_status(warp::reply::json(&String::from("Post MPV command could not be found")), warp::http::StatusCode::BAD_REQUEST));}
-
-
-        //new loop mpv
-        let mut new_loopmpv = "";
-        if let Some(value) = tile.get("loopmpv"){
-            new_loopmpv = value;
-            if new_loopmpv.len() > 10 || (new_loopmpv != "yes" && new_loopmpv != "no"){
-                return Ok(warp::reply::with_status(warp::reply::json(&String::from("Loop MPV command was too long or short and possible not Yes or No")), warp::http::StatusCode::BAD_REQUEST));
-            }
-        }else{return Ok(warp::reply::with_status(warp::reply::json(&String::from("Loop MPV command could not be found")), warp::http::StatusCode::BAD_REQUEST));}
-
-         //new shuffle mpv
-         let mut new_shufflempv = "";
-         if let Some(value) = tile.get("shufflempv"){
-             new_shufflempv = value;
-             if new_shufflempv.len() > 10 || (new_shufflempv != "yes" && new_shufflempv != "no"){
-                 return Ok(warp::reply::with_status(warp::reply::json(&String::from("Shuffle MPV command was too long or short and possible not Yes or No")), warp::http::StatusCode::BAD_REQUEST));
-             }
-         }else{return Ok(warp::reply::with_status(warp::reply::json(&String::from("Shuffle MPV command could not be found")), warp::http::StatusCode::BAD_REQUEST));}
+        }else{return Ok(warp::reply::with_status(warp::reply::json(&String::from("command command could not be found")), warp::http::StatusCode::BAD_REQUEST));}
 
         //new day
         let mut new_day = -1;
@@ -376,7 +294,7 @@ pub async fn put_tile(input : Vec<HashMap<String, String>>) -> Result<impl warp:
 
         //new time
         let mut new_time = "";
-        if let Some(value) = tile.get("time"){
+        if let Some(value) = tile.get("start_time"){
             new_time = value;
         }else{return Ok(warp::reply::with_status(warp::reply::json(&String::from("Could not find time")), warp::http::StatusCode::BAD_REQUEST));}
         //new duration
@@ -390,7 +308,7 @@ pub async fn put_tile(input : Vec<HashMap<String, String>>) -> Result<impl warp:
         let mut new_color = 0;
         if let Some(value) = tile.get("color"){
             if let Ok(value) = value.parse::<i32>(){
-                if value > 0 && value < 6 {
+                if value > 0 && value <= 20 {
                     new_color = value;
                 }else{
                     return Ok(warp::reply::with_status(warp::reply::json(&String::from("Could not parse color")), warp::http::StatusCode::BAD_REQUEST));
@@ -424,13 +342,9 @@ pub async fn put_tile(input : Vec<HashMap<String, String>>) -> Result<impl warp:
         let new = Tile {
             id: tile_id,
             title : new_title.to_string(),
-            mpv: new_mpv.to_string(),
-            prempv: new_prempv.to_string(),
-            postmpv: new_postmpv.to_string(),
-            loopmpv: new_loopmpv.to_string(),
-            shufflempv: new_shufflempv.to_string(),
+            command: new_command.to_string(),
             day: new_day,
-            time: new_time.to_string(),
+            start_time: new_time.to_string(),
             duration: new_duration,
             color: new_color
         };
@@ -438,13 +352,9 @@ pub async fn put_tile(input : Vec<HashMap<String, String>>) -> Result<impl warp:
         let new2 = Tile {
             id: tile_id,
             title : new_title.to_string(),
-            mpv: new_mpv.to_string(),
-            prempv: new_prempv.to_string(),
-            postmpv: new_postmpv.to_string(),
-            loopmpv: new_loopmpv.to_string(),
-            shufflempv: new_shufflempv.to_string(),
+            command: new_command.to_string(),
             day: new_day,
-            time: new_time.to_string(),
+            start_time: new_time.to_string(),
             duration: new_duration,
             color: new_color
         };
@@ -452,18 +362,14 @@ pub async fn put_tile(input : Vec<HashMap<String, String>>) -> Result<impl warp:
         let new3 = Tile {
             id: tile_id,
             title : new_title.to_string(),
-            mpv: new_mpv.to_string(),
-            prempv: new_prempv.to_string(),
-            postmpv: new_postmpv.to_string(),
-            loopmpv: new_loopmpv.to_string(),
-            shufflempv: new_shufflempv.to_string(),
+            command: new_command.to_string(),
             day: new_day,
-            time: new_time.to_string(),
+            start_time: new_time.to_string(),
             duration: new_duration,
             color: new_color
         };
 
-        if let Ok(current_db_tiles) = tiles.order(time.desc()).load::<Tile>(&connection) {
+        if let Ok(current_db_tiles) = tiles.order(start_time.desc()).load::<Tile>(&connection) {
             let mut exists = false;
             for db_tile in current_db_tiles {
                 if new.id==db_tile.id{
@@ -488,8 +394,8 @@ pub async fn put_tile(input : Vec<HashMap<String, String>>) -> Result<impl warp:
     for tile in unprocessed_tiles1{
         for tile2 in &unprocessed_tiles2{
             if tile2.id != tile.id{
-                let tile2_time = Time::new(&tile2.time).unwrap(); //Database shouldn't contain malformed data. Cross my fingers.
-                let tile_time = Time::new(&tile.time).unwrap(); //The conformance tests on 102 let us unwrap safely.
+                let tile2_time = Time::new(&tile2.start_time).unwrap(); //Database shouldn't contain malformed data. Cross my fingers.
+                let tile_time = Time::new(&tile.start_time).unwrap(); //The conformance tests on 102 let us unwrap safely.
                 if tile2.day == tile.day {
                     if tile_time > tile2_time && (tile2.duration + tile2_time.to_float()) > tile_time.to_float() {
                         return Ok(warp::reply::with_status(warp::reply::json(&String::from("Some modified tile overruns another modified tile")), warp::http::StatusCode::CONFLICT));
@@ -511,7 +417,7 @@ pub async fn put_tile(input : Vec<HashMap<String, String>>) -> Result<impl warp:
     //STEP 4
     //Cut it down database to include only unmodified values.
     let mut slimmed_db_tiles : std::vec::Vec<Tile> = Vec::new();
-    if let Ok(current_db_tiles) = tiles.order(time.desc()).load::<Tile>(&connection) {
+    if let Ok(current_db_tiles) = tiles.order(start_time.desc()).load::<Tile>(&connection) {
         for db_tile in current_db_tiles {
             let mut fail = false;
             for post_tile in &no_post_overlap_tiles2{
@@ -529,8 +435,8 @@ pub async fn put_tile(input : Vec<HashMap<String, String>>) -> Result<impl warp:
     }
     for tile in no_post_overlap_tiles{
         for db_tile in &slimmed_db_tiles{
-            let db_time = Time::new(&db_tile.time).unwrap(); //Database shouldn't contain malformed data. Cross my fingers.
-            let post_time = Time::new(&tile.time).unwrap(); //The conformance tests on 102 let us unwrap safely.
+            let db_time = Time::new(&db_tile.start_time).unwrap(); //Database shouldn't contain malformed data. Cross my fingers.
+            let post_time = Time::new(&tile.start_time).unwrap(); //The conformance tests on 102 let us unwrap safely.
             if db_tile.day == tile.day {
                 if post_time > db_time && (db_tile.duration + db_time.to_float()) > post_time.to_float() {
                     return Ok(warp::reply::with_status(warp::reply::json(&String::from("Some db tile overruns a modified tile")), warp::http::StatusCode::CONFLICT));

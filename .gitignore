@@ -6,6 +6,7 @@ src/clientapp/package-lock.json
 src/clientapp/build
 code.code-workspace
 .git
+alexbox.db
 planner.db
 build-pi/*
 build/*

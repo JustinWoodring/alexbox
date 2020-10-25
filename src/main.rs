@@ -20,12 +20,14 @@ use self::{
     routes::{
         playnow_route,
         tile_route,
-        config_route
+        config_route,
+        service_route
     },
     handlers::{
         playnow_handler,
         tile_handler,
-        config_handler
+        config_handler,
+        service_handler
     },
 };
 
@@ -47,7 +49,25 @@ async fn main() {
     /*let hello = warp::path!("hello" / String)
         .map(|name| format!("Hello, {}!", name));*/
 
-    let routes = index.or((get_current_tile!()).or(get_tile!()).or(post_tile!()).or(put_tile!()).or(delete_tile!())).or(get_config!()).or(post_playnow!());
+    let routes = index.or(
+        (
+            get_current_tile!()
+        ).or(
+            get_tile!()
+        ).or(
+            post_tile!()
+        ).or(
+            put_tile!()
+        ).or(
+            delete_tile!()
+        )
+    ).or(
+        get_config!()
+    ).or(
+        post_playnow!()
+    ).or(
+        get_scheduler!()
+    );
 
     let socket_addr : SocketAddr = (server_address.to_string()+":"+&bind_port).parse().unwrap();
 

@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {Table, Form, Input, Label, InputGroup, FormGroup, Button, UncontrolledTooltip, Spinner} from 'reactstrap';
-import { TabContent, TabPane, Nav, NavItem, NavLink, Card, CardTitle, CardText, Row, Col, InputGroupAddon, InputGroupText } from 'reactstrap';
+import { TabContent, TabPane, Nav, NavItem, NavLink, InputGroupAddon, InputGroupText } from 'reactstrap';
 import classnames from 'classnames';
 import axios from 'axios';
 
@@ -14,18 +14,20 @@ class Editor extends React.Component {
             isSyncing: true,
             linestyle: {
                 top: (50+1)+"px",
-            }
+            },
+            dragging:false,
+            draggingTimer: null,
+            item: {day: null, start_time: null}
         }
 
 
-        this.handleGridClick = this.handleGridClick.bind(this);
+        this.handleGridMouseDown = this.handleGridMouseDown.bind(this);
         this.squareClick = this.squareClick.bind(this);
         this.handleTitle = this.handleTitle.bind(this);
-        this.handleMPV = this.handleMPV.bind(this);
-        this.handlePreMPV = this.handlePreMPV.bind(this);
-        this.handlePostMPV = this.handlePostMPV.bind(this);
-        this.handleLoopMPV = this.handleLoopMPV.bind(this);
-        this.handleShuffleMPV = this.handleShuffleMPV.bind(this);
+        this.handleCommand = this.handleCommand.bind(this);
+        this.handleStartTime = this.handleStartTime.bind(this);
+        this.handleStartTimePositive = this.handleStartTimePositive.bind(this);
+        this.handleStartTimeNegative = this.handleStartTimeNegative.bind(this);
         this.handleDuration = this.handleDuration.bind(this);
         this.handleDurationPositive = this.handleDurationPositive.bind(this);
         this.handleDurationNegative = this.handleDurationNegative.bind(this);
@@ -35,9 +37,14 @@ class Editor extends React.Component {
         this.toggleModifiedCallbackTrue = this.props.toggleModifiedCallbackTrue;
         this.toggleModifiedCallbackFalse = this.props.toggleModifiedCallbackFalse;
         this.update = this.update.bind(this);
+        this.beginSquareDrag = this.beginSquareDrag.bind(this);
+        this.handleGridMouseUp = this.handleGridMouseUp.bind(this);
+        this.handleGridMouseMove = this.handleGridMouseMove.bind(this);
     }
 
     componentDidMount(){
+        var self = this;
+        window.addEventListener("mouseup", function(){self.setState({dragging:false})});
         //Attempt fetch of contents.
         const interval = setInterval(axios({
                 method: 'get',
@@ -76,36 +83,168 @@ class Editor extends React.Component {
         }
     }
 
-    handleGridClick(e){
+    handleGridMouseDown(e){
         e.preventDefault();
+        e.stopPropagation();
         var rect = e.target.getBoundingClientRect();
         var x = e.clientX - rect.left;
         var y = e.clientY - rect.top;
 
         if((x/((rect.right-rect.left)/8)) >= 1 && (y/((rect.bottom-rect.top)/50)) >= 2){
-            var item = {};
-            item.id = -1
-            item.title = "No Title"
-            item.mpv = ""
-            item.prempv = ""
-            item.postmpv = ""
-            item.loopmpv = "no"
-            item.shufflempv = "no"
-            item.modified = true;
-            item.day = Math.floor(x/((rect.right-rect.left)/8))-1
-            item.time = Math.floor(y/((rect.bottom-rect.top)/50))/2-1
-            item.duration = .5
-            item.deleted = false
+            if (!this.state.dragging){
+                var item = {};
+                item.id = -1
+                item.title = "No Title"
+                item.command = ""
+                item.modified = true;
+                item.day = Math.floor(x/((rect.right-rect.left)/8))-1
+                item.start_time = Math.floor(y/((rect.bottom-rect.top)/50))/2-1
+                item.duration = .5
+                item.deleted = false
 
-            var colors = ['1']
-            var i  = Math.floor(Math.random() * 6);
-            item.color = colors[0];
-            var gridItems = this.state.gridItems;
-            gridItems.push(item)
-            this.setState({gridItems: gridItems, selectedTile: gridItems.length-1});
+                var colors = ['1']
+                var i  = Math.floor(Math.random() * 6);
+                item.color = colors[0];
+                var gridItems = this.state.gridItems;
+                gridItems.push(item)
+                this.setState({gridItems: gridItems, selectedTile: gridItems.length-1});
+            }
+        }
+    }
+    
+    handleGridMouseUp(e){
+        e.preventDefault();
+        e.stopPropagation();
+        var rect = e.target.getBoundingClientRect();
+        var x = e.clientX - rect.left;
+        var y = e.clientY - rect.top;
+
+        if((x/((rect.right-rect.left)/8)) >= 1 && (y/((rect.bottom-rect.top)/50)) >= 2 && this.state.dragging){
+            var oldGridItems = this.state.gridItems;
+            var item = oldGridItems[this.state.selectedTile];
+            var selectedTile = this.state.selectedTile;
+            var duration = item.duration
+            var new_day = Math.floor(x/((rect.right-rect.left)/8))-1
+            var new_start_time = Math.floor(y/((rect.bottom-rect.top)/50))/2-1
+
+            if(new_start_time % .5 == 0 && new_start_time >= 0 && (duration + new_start_time) <= 24){
+                var ok = true;
+                for(var i = 0;i<oldGridItems.length;i++){
+                    if(i!=selectedTile){
+                        var tile = item;
+                        var other_tile = oldGridItems[i];
+                        if(other_tile.deleted != true){
+                            if(
+                                (
+                                    (
+                                        (new_start_time < other_tile.start_time) && 
+                                        (new_start_time + duration > other_tile.start_time)
+                                    ) ||
+                                    (
+                                        new_start_time == other_tile.start_time
+                                    ) ||
+                                    (
+                                        (other_tile.start_time < new_start_time) && 
+                                        (other_tile.start_time+other_tile.duration > new_start_time)
+                                    )
+                                ) && other_tile.day == new_day
+                            ){
+                                ok = false;
+                            }
+                        }
+                    }
+                }
+                if(ok){
+                    oldGridItems[selectedTile].start_time = new_start_time;
+                    oldGridItems[selectedTile].day = new_day;
+                    oldGridItems[selectedTile].modified = true;
+                    this.setState({gridItems: oldGridItems});
+                }
+            }
+        }
+        clearTimeout(this.state.draggingTimer);
+        this.setState({dragging:false});
+    }
+
+    handleGridMouseMove(e){
+        e.preventDefault();
+        e.stopPropagation();
+        var rect = e.target.getBoundingClientRect();
+        var x = e.clientX - rect.left;
+        var y = e.clientY - rect.top;
+
+        if((x/((rect.right-rect.left)/8)) >= 1 && (y/((rect.bottom-rect.top)/50)) >= 2 && this.state.dragging){
+            var oldGridItems = this.state.gridItems;
+            var item = oldGridItems[this.state.selectedTile];
+            var selectedTile = this.state.selectedTile;
+            var duration = item.duration
+            var new_day = Math.floor(x/((rect.right-rect.left)/8))-1
+            var new_start_time = Math.floor(y/((rect.bottom-rect.top)/50))/2-1
+
+            if(new_start_time % .5 == 0 && new_start_time >= 0 && (duration + new_start_time) <= 24){
+                var ok = true;
+                for(var i = 0;i<oldGridItems.length;i++){
+                    if(i!=selectedTile){
+                        var tile = item;
+                        var other_tile = oldGridItems[i];
+                        if(other_tile.deleted != true){
+                            if(
+                                (
+                                    (
+                                        (new_start_time < other_tile.start_time) && 
+                                        (new_start_time + duration > other_tile.start_time)
+                                    ) ||
+                                    (
+                                        new_start_time == other_tile.start_time
+                                    ) ||
+                                    (
+                                        (other_tile.start_time < new_start_time) && 
+                                        (other_tile.start_time+other_tile.duration > new_start_time)
+                                    )
+                                ) && other_tile.day == new_day
+                            ){
+                                ok = false;
+                            }
+                        }
+                    }
+                }
+                if(ok){
+                    oldGridItems[selectedTile].start_time = new_start_time;
+                    oldGridItems[selectedTile].day = new_day;
+                    oldGridItems[selectedTile].modified = true;
+                    this.setState({gridItems: oldGridItems});
+                }
+            }
         }
     }
 
+    squareClick(e,index){
+        e.preventDefault();
+        e.stopPropagation();
+        if (!this.state.dragging) {
+            if(this.state.selectedTile == index){
+                this.setState({selectedTile:null});
+            }else{
+                this.setState({selectedTile:index});
+            }
+        }
+        clearTimeout(this.state.draggingTimer);
+        this.setState({dragging:false});
+    }
+
+    beginSquareDrag(e,index){
+        e.preventDefault();
+        e.stopPropagation();
+        var self =this
+        var day = this.state.gridItems[index].day;
+        var start_time = this.state.gridItems[index].start_time;
+        this.setState({draggingTimer: setTimeout(function(){self.setState({dragging:true, selectedTile:index})}, 125), item: {day: day, start_time: start_time}});
+        if(this.state.selectedTile != index){
+            clearTimeout(this.state.draggingTimer);
+            this.setState({dragging: false, item: {day: day, start_time: start_time}});
+            
+        }
+    }
 
     sync(){
         this.setState({isSyncing: true});
@@ -123,23 +262,19 @@ class Editor extends React.Component {
                     var object = new Object();
                     object.id = gridItems[i].id.toString();
                     object.title = gridItems[i].title.toString();
-                    object.mpv = gridItems[i].mpv.toString();
-                    object.prempv = gridItems[i].prempv.toString();
-                    object.postmpv = gridItems[i].postmpv.toString();
-                    object.loopmpv = gridItems[i].loopmpv.toString();
-                    object.shufflempv = gridItems[i].shufflempv.toString();
+                    object.command = gridItems[i].command.toString();
                     object.day = gridItems[i].day.toString();
-                    if(gridItems[i].time*2 % 2==1){
-                        if(gridItems[i].time<10){
-                            object.time = "1970-01-01 0"+(gridItems[i].time-.5)+":30:00";
+                    if(gridItems[i].start_time*2 % 2==1){
+                        if(gridItems[i].start_time<10){
+                            object.start_time = "1970-01-01 0"+(gridItems[i].start_time-.5)+":30:00";
                         }else{
-                            object.time = "1970-01-01 "+(gridItems[i].time-.5)+":30:00";
+                            object.start_time = "1970-01-01 "+(gridItems[i].start_time-.5)+":30:00";
                         }
                     }else{
-                        if(gridItems[i].time<10){
-                            object.time = "1970-01-01 0"+(gridItems[i].time)+":00:00";
+                        if(gridItems[i].start_time<10){
+                            object.start_time = "1970-01-01 0"+(gridItems[i].start_time)+":00:00";
                         }else{
-                            object.time = "1970-01-01 "+(gridItems[i].time)+":00:00";
+                            object.start_time = "1970-01-01 "+(gridItems[i].start_time)+":00:00";
                         }
                     }
                     object.duration = gridItems[i].duration.toString();
@@ -148,23 +283,19 @@ class Editor extends React.Component {
                 }else if(gridItems[i].id == -1){
                     var object = new Object();
                     object.title = gridItems[i].title.toString();
-                    object.mpv = gridItems[i].mpv.toString();
-                    object.prempv = gridItems[i].prempv.toString();
-                    object.postmpv = gridItems[i].postmpv.toString();
-                    object.loopmpv = gridItems[i].loopmpv.toString();
-                    object.shufflempv = gridItems[i].shufflempv.toString();
+                    object.command = gridItems[i].command.toString();
                     object.day = gridItems[i].day.toString();
-                    if(gridItems[i].time*2 % 2==1){
-                        if(gridItems[i].time<10){
-                            object.time = "1970-01-01 0"+(gridItems[i].time-.5)+":30:00";
+                    if(gridItems[i].start_time*2 % 2==1){
+                        if(gridItems[i].start_time<10){
+                            object.start_time = "1970-01-01 0"+(gridItems[i].start_time-.5)+":30:00";
                         }else{
-                            object.time = "1970-01-01 "+(gridItems[i].time-.5)+":30:00";
+                            object.start_time = "1970-01-01 "+(gridItems[i].start_time-.5)+":30:00";
                         }
                     }else{
-                        if(gridItems[i].time<10){
-                            object.time = "1970-01-01 0"+(gridItems[i].time)+":00:00";
+                        if(gridItems[i].start_time<10){
+                            object.start_time = "1970-01-01 0"+(gridItems[i].start_time)+":00:00";
                         }else{
-                            object.time = "1970-01-01 "+(gridItems[i].time)+":00:00";
+                            object.start_time = "1970-01-01 "+(gridItems[i].start_time)+":00:00";
                         }
                     }
                     object.duration = gridItems[i].duration.toString();
@@ -229,42 +360,10 @@ class Editor extends React.Component {
         this.setState({gridItems: gridItems});
     }
 
-    handleMPV(e, index){
+    handleCommand(e, index){
         e.preventDefault();
         var gridItems = this.state.gridItems;
-        gridItems[index].mpv = e.target.value;
-        gridItems[index].modified = true;
-        this.setState({gridItems: gridItems});
-    }
-
-    handlePreMPV(e, index){
-        e.preventDefault();
-        var gridItems = this.state.gridItems;
-        gridItems[index].prempv = e.target.value;
-        gridItems[index].modified = true;
-        this.setState({gridItems: gridItems});
-    }
-
-    handlePostMPV(e, index){
-        e.preventDefault();
-        var gridItems = this.state.gridItems;
-        gridItems[index].postmpv = e.target.value;
-        gridItems[index].modified = true;
-        this.setState({gridItems: gridItems});
-    }
-
-    handleLoopMPV(e, index){
-        e.preventDefault();
-        var gridItems = this.state.gridItems;
-        gridItems[index].loopmpv = e.target.value;
-        gridItems[index].modified = true;
-        this.setState({gridItems: gridItems});
-    }
-
-    handleShuffleMPV(e, index){
-        e.preventDefault();
-        var gridItems = this.state.gridItems;
-        gridItems[index].shufflempv = e.target.value;
+        gridItems[index].command = e.target.value;
         gridItems[index].modified = true;
         this.setState({gridItems: gridItems});
     }
@@ -274,14 +373,14 @@ class Editor extends React.Component {
         var gridItems = this.state.gridItems;
         var new_duration = parseFloat(e.target.value);
 
-        if(e.target.value % .5 == 0 && e.target.value >= .5 && (gridItems[index].time + new_duration) <= 24){
+        if(e.target.value % .5 == 0 && e.target.value >= .5 && (gridItems[index].start_time + new_duration) <= 24){
             var ok = true;
             for(var i = 0;i<gridItems.length;i++){
                 if(i!=index){
                     var tile = gridItems[index];
                     var other_tile = gridItems[i];
                     if(other_tile.deleted != true){
-                        if(other_tile.time > tile.time && other_tile.time < (tile.time + new_duration) && other_tile.day == tile.day){
+                        if(other_tile.start_time > tile.start_time && other_tile.start_time < (tile.start_time + new_duration) && other_tile.day == tile.day){
                             ok = false;
                         }
                     }
@@ -300,14 +399,14 @@ class Editor extends React.Component {
         var gridItems = this.state.gridItems;
         var new_duration = parseFloat(gridItems[index].duration)+.5;
 
-        if(new_duration % .5 == 0 && new_duration >= .5 && (gridItems[index].time + new_duration) <= 24){
+        if(new_duration % .5 == 0 && new_duration >= .5 && (gridItems[index].start_time + new_duration) <= 24){
             var ok = true;
             for(var i = 0;i<gridItems.length;i++){
                 if(i!=index){
                     var tile = gridItems[index];
                     var other_tile = gridItems[i];
                     if(other_tile.deleted != true){
-                        if(other_tile.time > tile.time && other_tile.time < (tile.time + new_duration) && other_tile.day == tile.day){
+                        if(other_tile.start_time > tile.start_time && other_tile.start_time < (tile.start_time + new_duration) && other_tile.day == tile.day){
                             ok = false;
                         }
                     }
@@ -326,14 +425,14 @@ class Editor extends React.Component {
         var gridItems = this.state.gridItems;
         var new_duration = parseFloat(gridItems[index].duration)-.5;
 
-        if(new_duration % .5 == 0 && new_duration >= .5 && (gridItems[index].time + new_duration) <= 24){
+        if(new_duration % .5 == 0 && new_duration >= .5 && (gridItems[index].start_time + new_duration) <= 24){
             var ok = true;
             for(var i = 0;i<gridItems.length;i++){
                 if(i!=index){
                     var tile = gridItems[index];
                     var other_tile = gridItems[i];
                     if(other_tile.deleted != true){
-                        if(other_tile.time > tile.time && other_tile.time < (tile.time + new_duration) && other_tile.day == tile.day){
+                        if(other_tile.start_time > tile.start_time && other_tile.start_time < (tile.start_time + new_duration) && other_tile.day == tile.day){
                             ok = false;
                         }
                     }
@@ -347,9 +446,129 @@ class Editor extends React.Component {
         }
     }
 
+    handleStartTime(e, index){
+        e.preventDefault();
+        var gridItems = this.state.gridItems;
+        var new_start_time = parseFloat(e.target.value);
+
+        if(new_start_time % .5 == 0 && new_start_time >= 0 && (gridItems[index].duration + new_start_time) <= 24){
+            var ok = true;
+            for(var i = 0;i<gridItems.length;i++){
+                if(i!=index){
+                    var tile = gridItems[index];
+                    var other_tile = gridItems[i];
+                    if(other_tile.deleted != true){
+                        if(
+                            (
+                                (
+                                    (new_start_time < other_tile.start_time) && 
+                                    (new_start_time + tile.duration > other_tile.start_time)
+                                ) ||
+                                (
+                                    new_start_time == other_tile.start_time
+                                ) ||
+                                (
+                                    (other_tile.start_time < new_start_time) && 
+                                    (other_tile.start_time+other_tile.duration > new_start_time+tile.duration)
+                                )
+                            ) && other_tile.day == tile.day
+                        ){
+                            ok = false;
+                        }
+                    }
+                }
+            }
+            if(ok){
+                gridItems[index].start_time = new_start_time;
+                gridItems[index].modified = true;
+                this.setState({gridItems: gridItems});
+            }
+        }
+    }
+
+    handleStartTimePositive(e, index){
+        e.preventDefault();
+        var gridItems = this.state.gridItems;
+        var new_start_time = parseFloat(gridItems[index].start_time)+.5;
+
+        if(new_start_time % .5 == 0 && new_start_time >= 0 && (gridItems[index].duration + new_start_time) <= 24){
+            var ok = true;
+            for(var i = 0;i<gridItems.length;i++){
+                if(i!=index){
+                    var tile = gridItems[index];
+                    var other_tile = gridItems[i];
+                    if(other_tile.deleted != true){
+                        if(
+                            (
+                                (
+                                    (new_start_time < other_tile.start_time) && 
+                                    (new_start_time + tile.duration > other_tile.start_time)
+                                ) ||
+                                (
+                                    new_start_time == other_tile.start_time
+                                ) ||
+                                (
+                                    (other_tile.start_time < new_start_time) && 
+                                    (other_tile.start_time+other_tile.duration > new_start_time+tile.duration)
+                                )
+                            ) && other_tile.day == tile.day
+                        ){
+                            ok = false;
+                        }
+                    }
+                }
+            }
+            if(ok){
+                gridItems[index].start_time = new_start_time;
+                gridItems[index].modified = true;
+                this.setState({gridItems: gridItems});
+            }
+        }
+    }
+
+    handleStartTimeNegative(e, index){
+        e.preventDefault();
+        var gridItems = this.state.gridItems;
+        var new_start_time = parseFloat(gridItems[index].start_time)-.5;
+
+        if(new_start_time % .5 == 0 && new_start_time >= 0 && (gridItems[index].duration + new_start_time) <= 24){
+            var ok = true;
+            for(var i = 0;i<gridItems.length;i++){
+                if(i!=index){
+                    var tile = gridItems[index];
+                    var other_tile = gridItems[i];
+                    if(other_tile.deleted != true){
+                        if(
+                            (
+                                (
+                                    (new_start_time < other_tile.start_time) && 
+                                    (new_start_time + tile.duration > other_tile.start_time)
+                                ) ||
+                                (
+                                    new_start_time == other_tile.start_time
+                                ) ||
+                                (
+                                    (other_tile.start_time < new_start_time) && 
+                                    (other_tile.start_time+other_tile.duration > new_start_time)
+                                )
+                            ) && other_tile.day == tile.day
+                        ){
+                            ok = false;
+                        }
+                    }
+                }
+            }
+            if(ok){
+                gridItems[index].start_time = new_start_time;
+                gridItems[index].modified = true;
+                this.setState({gridItems: gridItems});
+            }
+        }
+    }
+
     handleColor(e, index){
         e.preventDefault();
-        if(e.target.value > 0 && e.target.value < 6){
+        if(e.target.value > 0 && e.target.value <=  Object.values(this.props.config.ui_colors).length){
             var gridItems = this.state.gridItems;
             gridItems[index].color = e.target.value;
             gridItems[index].modified = true;
@@ -384,20 +603,15 @@ class Editor extends React.Component {
             method: 'post',
             url: '/playnow',
             data: {
-                command: oldGridItems[index].mpv,
+                command: oldGridItems[index].command,
             },
             config: { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache'  } },
         });
     }
 
-    squareClick(e,index){
-        e.preventDefault();
-        e.stopPropagation();
-        this.setState({selectedTile:index});
-    }
-
-
     render() {
+
+
         if(this.props.shouldSync){
             this.sync();
             this.props.syncCallback();
@@ -422,12 +636,12 @@ class Editor extends React.Component {
 
         return !this.state.isSyncing ? (
             <div className="editor-wrapper">
-                <div className="time-table">
+                <div style={{cursor: (this.state.dragging) ? "move" : "crosshair"}} className="time-table">
                     <div className="time-line" style={this.state.linestyle}></div>
-                    <div onClick={this.handleGridClick} className="grid">
+                    <div onMouseDown={this.handleGridMouseDown} onMouseUp={this.handleGridMouseUp} onMouseMove={this.handleGridMouseMove} className="grid">
                         {this.state.gridItems.map((value, index) => {
-                            var start = value.time*2+3 //We subtracted an extra 1 to make it 0 in times.
-                            var stop = value.time*2+3 + value.duration*2
+                            var start = value.start_time*2+3 //We subtracted an extra 1 to make it 0 in start_times.
+                            var stop = value.start_time*2+3 + value.duration*2
                             var day = value.day+2;
                             var color = value.color;
                             var title = value.title;
@@ -436,7 +650,7 @@ class Editor extends React.Component {
                             }
                             if(!value.deleted){
                                 return( 
-                                <div className={"tile tile-color-"+color} key={index} id={"tile"+index} onClick={(e) => this.squareClick(e, index)} style={{gridArea: start + "/" + day + "/" + stop + "/" + (day+1)}}>
+                                <div className={"tile tile-color-"+color} key={index} id={"tile"+index} onMouseMove={(e) => {e.stopPropagation();}} onMouseDown={(e) => this.beginSquareDrag(e, index)} onMouseUp={(e) => this.squareClick(e, index)} style={{gridArea: start + "/" + day + "/" + stop + "/" + (day+1), cursor: (this.state.dragging) ? "no-drop" : "pointer", pointerEvents: (this.state.dragging&&index==this.state.selectedTile) ? "none" : "inherit", opacity: (this.state.dragging&&index==this.state.selectedTile) ? 0.5 : 1}}>
                                     {title}
                                     <UncontrolledTooltip placement="right" target={"tile"+index}>
                                         {title}
@@ -451,7 +665,23 @@ class Editor extends React.Component {
                         })}
                     </Table>
                 </div>
-                <Config handleDelete={this.handleDelete} handleTitle={this.handleTitle} handlePlayNow={this.handlePlayNow} handleDuration={this.handleDuration} handleDurationPositive={this.handleDurationPositive} handleDurationNegative={this.handleDurationNegative} handleColor={this.handleColor} handleMPV={this.handleMPV} handlePreMPV={this.handlePreMPV} handlePostMPV={this.handlePostMPV} handleLoopMPV={this.handleLoopMPV} handleShuffleMPV={this.handleShuffleMPV} selectedTile={this.state.selectedTile} gridItems={this.state.gridItems} className="config-panel"/>
+                <Config 
+                    config={this.props.config} 
+                    handleDelete={this.handleDelete} 
+                    handleTitle={this.handleTitle} 
+                    handlePlayNow={this.handlePlayNow} 
+                    handleStartTime={this.handleStartTime} 
+                    handleStartTimePositive={this.handleStartTimePositive} 
+                    handleStartTimeNegative={this.handleStartTimeNegative} 
+                    handleDuration={this.handleDuration} 
+                    handleDurationPositive={this.handleDurationPositive} 
+                    handleDurationNegative={this.handleDurationNegative}
+                    handleColor={this.handleColor} 
+                    handleCommand={this.handleCommand} 
+                    selectedTile={this.state.selectedTile} 
+                    gridItems={this.state.gridItems} 
+                    className="config-panel"
+                />
             </div>
         ) : (<div class="syncSpace"><Spinner style={{margin: "auto", width: '3rem', height: '3rem'}} color="info"/></div>) ;
     }
@@ -461,11 +691,10 @@ class Config extends React.Component {
     constructor(props){
         super(props);
         this.handleTitle = this.props.handleTitle;
-        this.handleMPV = this.props.handleMPV;
-        this.handlePreMPV = this.props.handlePreMPV;
-        this.handlePostMPV = this.props.handlePostMPV;
-        this.handleLoopMPV = this.props.handleLoopMPV;
-        this.handleShuffleMPV = this.props.handleShuffleMPV;
+        this.handleCommand = this.props.handleCommand;
+        this.handleStartTime = this.props.handleStartTime;
+        this.handleStartTimePositive = this.props.handleStartTimePositive;
+        this.handleStartTimeNegative = this.props.handleStartTimeNegative;
         this.handleDuration = this.props.handleDuration;
         this.handleDurationPositive = this.props.handleDurationPositive;
         this.handleDurationNegative = this.props.handleDurationNegative;
@@ -493,21 +722,21 @@ class Config extends React.Component {
             var tile = this.props.gridItems[this.props.selectedTile];
             var time = "";
             
-            if(tile.time % 1 == .5){
-                time+=Math.floor(tile.time);
+            if(tile.start_time % 1 == .5){
+                time+=Math.floor(tile.start_time);
                 time+=":30"
             }else{
-                time+=Math.floor(tile.time);
+                time+=Math.floor(tile.start_time);
                 time+=":00"
             }
 
             time+="-";
             
-            if((tile.time+tile.duration) % 1 == .5){
-                time+=Math.floor(tile.time+tile.duration);
+            if((tile.start_time+tile.duration) % 1 == .5){
+                time+=Math.floor(tile.start_time+tile.duration);
                 time+=":30"
             }else{
-                time+=Math.floor(tile.time+tile.duration);
+                time+=Math.floor(tile.start_time+tile.duration);
                 time+=":00"
             }
 
@@ -523,6 +752,16 @@ class Config extends React.Component {
                 case 6: time+="Saturday";break;
             }
         }
+
+        var i = 1;
+        const colors = []
+        Object.values(this.props.config.ui_colors).map((element, index) => {
+            if(i <= 20){
+                colors.push(<option value={i}>{element[0]}</option>)
+                i++;
+            }
+        })
+
         return (this.props.selectedTile != null) ? (
             <div className="config-panel">
             <div className="config-panel-inner">
@@ -549,6 +788,16 @@ class Config extends React.Component {
                                     <Input placeholder="Title" id="Title" maxlength="50"  onChange={(e) => this.handleTitle(e, this.props.selectedTile)} value={this.props.gridItems[this.props.selectedTile].title} type="text"/>
                                 </FormGroup>
                                 <FormGroup>
+                                    <Label htmlFor="StartTime">StartTime (Hrs)</Label>
+                                    <InputGroup>
+                                        <Input placeholder="0.5" id="StartTime" disabled step="0.5" onChange={(e) => this.handleStartTime(e, this.props.selectedTile)} value={this.props.gridItems[this.props.selectedTile].start_time} type="number"/>
+                                        <InputGroupAddon addonType="append">
+                                            <InputGroupText className="input-group-button" onClick={(e) => this.handleStartTimePositive(e, this.props.selectedTile)}>+</InputGroupText>
+                                            <InputGroupText className="input-group-button" onClick={(e) => this.handleStartTimeNegative(e, this.props.selectedTile)}>-</InputGroupText>
+                                        </InputGroupAddon>
+                                    </InputGroup>
+                                </FormGroup>
+                                <FormGroup>
                                     <Label htmlFor="Duration">Duration (Hrs)</Label>
                                     <InputGroup>
                                         <Input placeholder="0.5" id="Duration" disabled step="0.5" onChange={(e) => this.handleDuration(e, this.props.selectedTile)} value={this.props.gridItems[this.props.selectedTile].duration} type="number"/>
@@ -561,11 +810,7 @@ class Config extends React.Component {
                                 <FormGroup>
                                     <Label htmlFor="Color">Color</Label>
                                     <Input id="Color" onChange={(e) => this.handleColor(e, this.props.selectedTile)} value={this.props.gridItems[this.props.selectedTile].color} type="select">
-                                        <option value="1">Green</option>
-                                        <option value="2">Yellow</option>
-                                        <option value="3">Orange</option>
-                                        <option value="4">Red</option>
-                                        <option value="5">Pink</option>
+                                        {colors}
                                     </Input>
                                 </FormGroup>
                                 <FormGroup className="rightside">
@@ -577,30 +822,8 @@ class Config extends React.Component {
                         <TabPane tabId="2">
                             <Form>
                                 <FormGroup>
-                                    <Label htmlFor="MPV">MPV Command</Label>
-                                    <Input placeholder="MPV Command" id="MPV" maxlength="1000" onChange={(e) => this.handleMPV(e, this.props.selectedTile)} value={this.props.gridItems[this.props.selectedTile].mpv} type="textarea"/>
-                                </FormGroup>
-                                <FormGroup>
-                                    <Label htmlFor="preMPV">Pre Roll Command</Label>
-                                    <Input placeholder="Pre Roll MPV Command" id="preMPV" maxlength="1000" onChange={(e) => this.handlePreMPV(e, this.props.selectedTile)} value={this.props.gridItems[this.props.selectedTile].prempv} type="textarea"/>
-                                </FormGroup>
-                                <FormGroup>
-                                    <Label htmlFor="postMPV">Post Roll MPV Command</Label>
-                                    <Input placeholder="Post Roll MPV Command" id="postMPV" maxlength="1000" onChange={(e) => this.handlePostMPV(e, this.props.selectedTile)} value={this.props.gridItems[this.props.selectedTile].postmpv} type="textarea"/>
-                                </FormGroup>
-                                <FormGroup>
-                                    <Label htmlFor="loop">Loop</Label>
-                                    <Input id="Loop" onChange={(e) => this.handleLoopMPV(e, this.props.selectedTile)} value={this.props.gridItems[this.props.selectedTile].loopmpv} type="select">
-                                        <option value="no">No</option>
-                                        <option value="yes">Yes</option>
-                                    </Input>
-                                </FormGroup>
-                                <FormGroup>
-                                    <Label htmlFor="shuffle">Shuffle</Label>
-                                    <Input id="Shuffle" onChange={(e) => this.handleShuffleMPV(e, this.props.selectedTile)} value={this.props.gridItems[this.props.selectedTile].shufflempv} type="select">
-                                        <option value="no">No</option>
-                                        <option value="yes">Yes</option>
-                                    </Input>
+                                    <Label htmlFor="command">Command</Label>
+                                    <Input placeholder="command" id="command" maxlength="1000" onChange={(e) => this.handleCommand(e, this.props.selectedTile)} value={this.props.gridItems[this.props.selectedTile].command} type="textarea"/>
                                 </FormGroup>
                             </Form>
                         </TabPane>

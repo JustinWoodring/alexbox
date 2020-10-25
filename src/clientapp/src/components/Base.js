@@ -11,12 +11,11 @@ class Base extends React.Component {
         this.state = {
           isLoggedIn: true,
           shouldSync: false,
-          serverRunning: false,
+          serviceRunning: true,
           modified: false,
-          config: null,
+          config: {ui_name: "Alexbox", ui_logo: "logo.png", ui_colors: {}},
         }
         this.syncCallback = this.syncCallback.bind(this);
-        this.toggleRunCallback = this.toggleRunCallback.bind(this);
         this.toggleModifiedCallbackTrue = this.toggleModifiedCallbackTrue.bind(this);
         this.toggleModifiedCallbackFalse = this.toggleModifiedCallbackFalse.bind(this);
     }
@@ -35,44 +34,53 @@ class Base extends React.Component {
 
     componentDidMount(){
       //Attempt fetch of contents.
-      /*setInterval(axios.get('/running')
+      var self = this;
+      setInterval(async function(){axios.get('/service/scheduler')
           .then(res => {
-              if (res.data == true){
-                this.setState({serverRunning: true});
+              if (res.data.running == true){
+                self.setState({serviceRunning: true});
               }else{
-                this.setState({serverRunning: false});
+                self.setState({serviceRunning: false});
               }
       }).catch((error) => {
-        this.setState({serverRunning: false});
-      }), 2000);*/
-      /*'Content-Type': 'application/json', 'Cache-Control': 'no-cache'*/
+        self.setState({serviceRunning: false});
+      })}, 5000);
 
       axios.get('/config').then(res => {
         this.setState({config: res.data});
         document.getElementById("title").innerText=res.data.ui_name;
+        var i = 1;
+        Object.values(res.data.ui_colors).map((element, index) => {
+          if(i <= 20){
+            let styleSheet = document.styleSheets[0];
+            styleSheet.insertRule(".tile.tile-color-"+i+" { background-color: "+element[1]+"}");
+          }
+          i++;
+        })
       }).catch((error) => {
-          this.setState({serverRunning: false});
       })
     }
 
-
-    toggleRunCallback(){
-      this.setState({serverRunning: true});
-      /*axios.post('/running')
-          .then(res => {
-              if (res.data == true){
-                this.setState({serverRunning: false});
-              }else{
-                this.setState({serverRunning: true});
-              }
-            }
-          ).catch((error) => {
-            this.setState({serverRunning: false});
-          })*/
-    }
-
     render() {
-      return (<div><NavMenu config={this.state.config} syncCallback={this.syncCallback} isModified={this.state.modified} Running={this.state.serverRunning} toggleRunCallback={this.toggleRunCallback}/><Editor syncCallback={this.syncCallback} toggleModifiedCallbackTrue={this.toggleModifiedCallbackTrue} toggleModifiedCallbackFalse={this.toggleModifiedCallbackFalse} shouldSync={this.state.shouldSync}/><Footer/></div>);
+      return (
+        <div>
+          <NavMenu 
+            config={this.state.config} 
+            syncCallback={this.syncCallback} 
+            isModified={this.state.modified} 
+            isRunning={this.state.serviceRunning} 
+            toggleRunCallback={this.toggleRunCallback}
+          />
+          <Editor 
+            config={this.state.config}
+            syncCallback={this.syncCallback} 
+            toggleModifiedCallbackTrue={this.toggleModifiedCallbackTrue} 
+            toggleModifiedCallbackFalse={this.toggleModifiedCallbackFalse} 
+            shouldSync={this.state.shouldSync}
+          />
+          <Footer/>
+        </div>
+      );
     }
   }
 

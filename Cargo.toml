@@ -1,6 +1,6 @@
 [package]
 name = "alexbox"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["Booglejr <rooty@kwtechllc.com>"]
 edition = "2018"
 
@@ -18,7 +18,6 @@ warp = "0.2"
 serde = {version = "1.0.104", features = ["derive"]}
 diesel = {version = "1.4.3", features = ["sqlite"]}
 diesel_migrations = {version = "1.4.0"}
-dotenv = "0.15.0"
 libsqlite3-sys = { version = "0.9.1", features = ["bundled"] }
 xml-rs = "0.8.1"
 chrono = "0.4"

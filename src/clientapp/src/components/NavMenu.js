@@ -17,14 +17,6 @@ class NavMenu extends React.Component {
     }
 
     render() {
-        if(this.props.Running == true){
-            var running1 = "Running";
-            var running2 = "running";
-        }else{
-            var running1 = "Stopped";
-            var running2 = "stopped";
-        }
-
         if(this.props.isModified == true){
             var button = <Button onClick={this.syncCallback} color="success">Save</Button>
         }else{
@@ -45,7 +37,7 @@ class NavMenu extends React.Component {
                 <Nav className="ml-auto" navbar>
                     <NavItem>
                         {button}&ensp;
-                        <Button onClick={this.toggleRunCallback} color="secondary" disabled>Doesn't Work {/*running1*/ /*<span className={"circle "+running2}></span>*/}</Button>
+                        <span className={"circle "+ ((this.props.isRunning) ? "running" : "stopped")}></span>
                     </NavItem>
                 </Nav>
             </Navbar>
