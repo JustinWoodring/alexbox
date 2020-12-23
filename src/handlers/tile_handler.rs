@@ -71,7 +71,7 @@ pub async fn get_current_tile() -> Result<impl warp::Reply, warp::Rejection> {
             //If tile times match up to local time then
             if 
                 my_time <= localtime && 
-                localtime.to_float() <= (my_time.to_float()+tile.duration) && 
+                localtime.to_float() < (my_time.to_float()+tile.duration) && 
                 localday.parse::<i32>().unwrap() == tile.day
             {
                 //create dto
