@@ -6,11 +6,11 @@ Alexbox is a scheduling tool for mpv that lets schedule media to be played at ce
 
 ## Running
 
-You'll need docker, rust, cross, and cargo-strip.
+You'll need docker, rust, npm, cross, and cargo-strip.
 
 1. So get docker somehow.
 
-2. Install rust.
+2. Install rust and npm.
 
 3. Then run
 ```
