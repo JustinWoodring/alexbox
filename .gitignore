@@ -10,3 +10,5 @@ alexbox.db
 planner.db
 build-pi/*
 build/*
+build-pi.tar.gz
+build.tar.gz
